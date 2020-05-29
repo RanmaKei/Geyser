@@ -81,7 +81,13 @@ import java.net.InetSocketAddress;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayDeque;
+import java.util.List;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
@@ -165,6 +171,8 @@ public class GeyserSession implements CommandSender {
 
     @Setter
     private int craftSlot = 0;
+
+    private final AsyncActionExecutor actionExecutor = new AsyncActionExecutor();
 
     private MinecraftProtocol protocol;
 
@@ -556,6 +564,28 @@ public class GeyserSession implements CommandSender {
             downstream.getSession().send(packet);
         } else {
             connector.getLogger().debug("Tried to send downstream packet " + packet.getClass().getSimpleName() + " before connected to the server");
+        }
+    }
+
+    /**
+     * Manage Runnables in an ordered fashion asynchronously
+     */
+    @Getter
+    private class AsyncActionExecutor {
+        private final BlockingQueue<Runnable> actions = new LinkedBlockingDeque<>();
+
+        AsyncActionExecutor() {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        while(true) {
+                            actions.take().run();
+                        }
+                    } catch (InterruptedException ignored) {
+                    }
+                }
+            }).start();
         }
     }
 }

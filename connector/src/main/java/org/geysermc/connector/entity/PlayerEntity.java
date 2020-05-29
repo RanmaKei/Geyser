@@ -113,14 +113,6 @@ public class PlayerEntity extends LivingEntity {
     public void sendPlayer(GeyserSession session) {
         if(session.getEntityCache().getPlayerEntity(uuid) == null)
             return;
-        if (getLastSkinUpdate() == -1) {
-            if (playerList) {
-                PlayerListPacket playerList = new PlayerListPacket();
-                playerList.setAction(PlayerListPacket.Action.ADD);
-                playerList.getEntries().add(SkinUtils.buildDefaultEntry(profile, geyserId));
-                session.sendUpstreamPacket(playerList);
-            }
-        }
 
         if (session.getUpstream().isInitialized() && session.getEntityCache().getEntityByGeyserId(geyserId) == null) {
             session.getEntityCache().spawnEntity(this);
@@ -131,12 +123,19 @@ public class PlayerEntity extends LivingEntity {
         if (!playerList) {
             // remove from playerlist if player isn't on playerlist
             GeyserConnector.getInstance().getGeneralThreadPool().execute(() -> {
-                PlayerListPacket playerList = new PlayerListPacket();
-                playerList.setAction(PlayerListPacket.Action.REMOVE);
-                playerList.getEntries().add(new PlayerListPacket.Entry(uuid));
-                session.sendUpstreamPacket(playerList);
+                playerlistRemove(session);
             });
         }
+    }
+
+    /**
+     * Remove player from the player list
+     */
+    public void playerlistRemove(GeyserSession session) {
+        PlayerListPacket playerList = new PlayerListPacket();
+        playerList.setAction(PlayerListPacket.Action.REMOVE);
+        playerList.getEntries().add(new PlayerListPacket.Entry(uuid));
+        session.sendUpstreamPacket(playerList);
     }
 
     @Override
