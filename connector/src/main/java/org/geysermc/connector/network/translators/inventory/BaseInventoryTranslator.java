@@ -217,6 +217,10 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                 plan.add(new Click(Click.Type.LEFT, to.javaSlot));
             }
 
+            if (from != cursor) {
+                plan.add(new Click(Click.Type.LEFT, from.javaSlot));
+            }
+
             int currentCount = from.currentCount;
             int currentId = from.getCurrentId();
 
