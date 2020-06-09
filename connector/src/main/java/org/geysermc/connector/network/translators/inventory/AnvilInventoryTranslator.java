@@ -35,9 +35,12 @@ import com.nukkitx.protocol.bedrock.data.InventoryActionData;
 import com.nukkitx.protocol.bedrock.data.ItemData;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.connector.network.translators.inventory.action.ActionPlan;
+import org.geysermc.connector.network.translators.inventory.action.Execute;
 import org.geysermc.connector.network.translators.inventory.updater.CursorInventoryUpdater;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AnvilInventoryTranslator extends BlockInventoryTranslator {
     public AnvilInventoryTranslator() {
@@ -73,46 +76,37 @@ public class AnvilInventoryTranslator extends BlockInventoryTranslator {
     }
 
     @Override
-    public SlotType getSlotType(int javaSlot) {
-        if (javaSlot == 2)
-            return SlotType.OUTPUT;
-        return SlotType.NORMAL;
+    public boolean isOutput(InventoryActionData action) {
+        return bedrockSlotToJava(action) == 2;
+    }
+
+
+
+    @Override
+    protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
+        // If from is ANVIL_RESULT we add a rename packet
+        if (from.action.getSource().getContainerId() == ContainerId.ANVIL_RESULT) {
+            plan.add(new Execute(() -> {
+                ItemData item = from.action.getFromItem();
+                com.nukkitx.nbt.tag.CompoundTag tag = item.getTag();
+                String rename = tag != null ? tag.getCompound("display").getString("Name") : "";
+                ClientRenameItemPacket renameItemPacket = new ClientRenameItemPacket(rename);
+                System.err.println("Rename: " + renameItemPacket);
+                session.sendDownstreamPacket(renameItemPacket);
+            }));
+        }
+
+        super.processAction(session, inventory, plan, cursor, from, to);
     }
 
     @Override
     public void translateActions(GeyserSession session, Inventory inventory, List<InventoryActionData> actions) {
-        InventoryActionData anvilResult = null;
-        InventoryActionData anvilInput = null;
-        for (InventoryActionData action : actions) {
-            if (action.getSource().getContainerId() == ContainerId.ANVIL_MATERIAL) {
-                //useless packet
-                return;
-            } else if (action.getSource().getContainerId() == ContainerId.ANVIL_RESULT) {
-                anvilResult = action;
-            } else if (bedrockSlotToJava(action) == 0) {
-                anvilInput = action;
-            }
-        }
-        ItemData itemName = null;
-        if (anvilResult != null) {
-            itemName = anvilResult.getFromItem();
-        } else if (anvilInput != null) {
-            itemName = anvilInput.getToItem();
-        }
-        if (itemName != null) {
-            String rename;
-            com.nukkitx.nbt.tag.CompoundTag tag = itemName.getTag();
-            if (tag != null) {
-                rename = tag.getCompound("display").getString("Name");
-            } else {
-                rename = "";
-            }
-            ClientRenameItemPacket renameItemPacket = new ClientRenameItemPacket(rename);
-            session.sendDownstreamPacket(renameItemPacket);
-        }
-        if (anvilResult != null) {
-            //client will send another packet to grab anvil output
-            return;
+        // If we have an anvil_result then we filter out anvil_material and container_input
+        if (actions.stream().anyMatch(this::isOutput)) {
+            actions = actions.stream()
+                    .filter(a -> a.getSource().getContainerId() != ContainerId.ANVIL_MATERIAL)
+                    .filter(a -> a.getSource().getContainerId() != ContainerId.CONTAINER_INPUT)
+                    .collect(Collectors.toList());
         }
 
         super.translateActions(session, inventory, actions);

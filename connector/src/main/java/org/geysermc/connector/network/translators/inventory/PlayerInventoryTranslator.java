@@ -36,13 +36,14 @@ import com.nukkitx.protocol.bedrock.packet.InventoryContentPacket;
 import com.nukkitx.protocol.bedrock.packet.InventorySlotPacket;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
-import org.geysermc.connector.network.translators.inventory.action.InventoryActionDataTranslator;
+import org.geysermc.connector.network.translators.inventory.action.ActionPlan;
+import org.geysermc.connector.network.translators.inventory.action.Refresh;
 import org.geysermc.connector.network.translators.item.ItemTranslator;
 import org.geysermc.connector.utils.InventoryUtils;
 
 import java.util.List;
 
-public class PlayerInventoryTranslator extends InventoryTranslator {
+public class PlayerInventoryTranslator extends BaseInventoryTranslator {
     private static ItemData UNUSUABLE_CRAFTING_SPACE_BLOCK;
 
     public PlayerInventoryTranslator() {
@@ -172,10 +173,21 @@ public class PlayerInventoryTranslator extends InventoryTranslator {
     }
 
     @Override
-    public SlotType getSlotType(int javaSlot) {
-        if (javaSlot == 0)
-            return SlotType.OUTPUT;
-        return SlotType.NORMAL;
+    public boolean isOutput(InventoryActionData action) {
+        return bedrockSlotToJava(action) == 0;
+    }
+
+    @Override
+    protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
+        if (to.action.getSource().getContainerId() == ContainerId.CRAFTING_USE_INGREDIENT) {
+            return;
+        }
+
+        super.processAction(session, inventory, plan, cursor, from, to);
+
+        if (isOutput(from.action)) {
+            plan.add(new Refresh());
+        }
     }
 
     @Override
@@ -224,7 +236,7 @@ public class PlayerInventoryTranslator extends InventoryTranslator {
             return;
         }
 
-        InventoryActionDataTranslator.translate(this, session, inventory, actions);
+        super.translateActions(session, inventory, actions);
     }
 
     @Override

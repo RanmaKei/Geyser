@@ -40,14 +40,15 @@ public class JavaSetSlotTranslator extends PacketTranslator<ServerSetSlotPacket>
 
     @Override
     public void translate(ServerSetSlotPacket packet, GeyserSession session) {
-        if (packet.getWindowId() == 255 && packet.getSlot() == -1) { //cursor
-            if (session.getCraftSlot() != 0)
-                return;
-
-            session.getInventory().setCursor(packet.getItem());
-            InventoryUtils.updateCursor(session);
-            return;
-        }
+        //@TODO Do we need any of this still?
+//        if (packet.getWindowId() == 255 && packet.getSlot() == -1) { //cursor
+//            if (session.getCraftSlot() != 0)
+//                return;
+//
+//            session.getInventory().setCursor(packet.getItem());
+//            InventoryUtils.updateCursor(session);
+//            return;
+//        }
 
         Inventory inventory = session.getInventoryCache().getInventories().get(packet.getWindowId());
         if (inventory == null || (packet.getWindowId() != 0 && inventory.getWindowType() == null))

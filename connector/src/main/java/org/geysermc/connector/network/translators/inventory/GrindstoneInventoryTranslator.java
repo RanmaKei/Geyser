@@ -25,9 +25,16 @@
 
 package org.geysermc.connector.network.translators.inventory;
 
+import com.nukkitx.protocol.bedrock.data.ContainerId;
 import com.nukkitx.protocol.bedrock.data.ContainerType;
 import com.nukkitx.protocol.bedrock.data.InventoryActionData;
+import org.geysermc.connector.inventory.Inventory;
+import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.connector.network.translators.inventory.action.ActionPlan;
 import org.geysermc.connector.network.translators.inventory.updater.CursorInventoryUpdater;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class GrindstoneInventoryTranslator extends BlockInventoryTranslator {
 
@@ -38,7 +45,7 @@ public class GrindstoneInventoryTranslator extends BlockInventoryTranslator {
     @Override
     public int bedrockSlotToJava(InventoryActionData action) {
         final int slot = super.bedrockSlotToJava(action);
-        if (action.getSource().getContainerId() == 124) {
+        if (action.getSource().getContainerId() == ContainerId.CURSOR) {
             switch (slot) {
                 case 16:
                     return 0;
@@ -63,6 +70,29 @@ public class GrindstoneInventoryTranslator extends BlockInventoryTranslator {
                 return 50;
         }
         return super.javaSlotToBedrock(slot);
+    }
+
+    @Override
+    protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
+        super.processAction(session, inventory, plan, cursor, from, to);
+    }
+
+    @Override
+    public void translateActions(GeyserSession session, Inventory inventory, List<InventoryActionData> actions) {
+        // If we have an anvil_result then we filter out anvil_material and container_input
+        if (actions.stream().anyMatch(this::isOutput)) {
+            actions = actions.stream()
+                    .filter(a -> a.getSource().getContainerId() != ContainerId.ANVIL_MATERIAL)
+                    .filter(a -> a.getSource().getContainerId() != ContainerId.CONTAINER_INPUT)
+                    .collect(Collectors.toList());
+        }
+
+        super.translateActions(session, inventory, actions);
+    }
+
+    @Override
+    public boolean isOutput(InventoryActionData action) {
+        return bedrockSlotToJava(action) == 2;
     }
 
 }

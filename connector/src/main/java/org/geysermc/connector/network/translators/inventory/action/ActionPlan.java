@@ -23,10 +23,41 @@
  * @link https://github.com/GeyserMC/Geyser
  */
 
-package org.geysermc.connector.network.translators.inventory;
+package org.geysermc.connector.network.translators.inventory.action;
 
-public enum SlotType {
-    NORMAL,
-    OUTPUT,
-    FURNACE_OUTPUT
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.ToString;
+import org.geysermc.connector.inventory.Inventory;
+import org.geysermc.connector.network.session.GeyserSession;
+import org.geysermc.connector.network.translators.inventory.InventoryTranslator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Getter
+@ToString
+@AllArgsConstructor
+public class ActionPlan {
+    private final List<BaseAction> actions = new ArrayList<>();
+
+    private final GeyserSession session;
+    private final InventoryTranslator translator;
+    private final Inventory inventory;
+
+    public void add(BaseAction action) {
+        actions.add(action);
+    }
+
+    public void execute() {
+        while (!actions.isEmpty()) {
+            BaseAction action = actions.remove(0);
+            action.execute(this);
+        }
+
+        /*if (refresh) {
+            translator.updateInventory(session, inventory);
+            InventoryUtils.updateCursor(session);
+        }*/
+    }
 }
