@@ -41,6 +41,7 @@ import org.geysermc.connector.network.translators.inventory.action.Click;
 import org.geysermc.connector.network.translators.inventory.action.ActionPlan;
 import org.geysermc.connector.network.translators.inventory.action.Drop;
 import org.geysermc.connector.network.translators.inventory.action.Refresh;
+import org.geysermc.connector.network.translators.item.ItemTranslator;
 import org.geysermc.connector.utils.InventoryUtils;
 
 import java.util.ArrayList;
@@ -98,13 +99,23 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
         }
 
         if (cursor == null) {
-            // Create a fake cursor action
-            cursor = new ActionData(this, new InventoryActionData(
-                    InventorySource.fromContainerWindowId(124),
-                    0,
-                    ItemData.of(0, (short) 0,0),
-                    ItemData.of(0, (short) 0,0)
-            ));
+            // Create a fake cursor action based upon current known cursor
+            ItemStack playerCursor = session.getInventory().getCursor();
+            if (playerCursor != null) {
+                cursor = new ActionData(this, new InventoryActionData(
+                        InventorySource.fromContainerWindowId(124),
+                        -1,
+                        ItemTranslator.translateToBedrock(session, playerCursor),
+                        ItemTranslator.translateToBedrock(session, playerCursor)
+                ));
+            } else {
+                cursor = new ActionData(this, new InventoryActionData(
+                        InventorySource.fromContainerWindowId(124),
+                        -1,
+                        ItemData.AIR,
+                        ItemData.AIR
+                ));
+            }
             actionDataList.add(cursor);
         }
 
@@ -275,6 +286,11 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
         if (from != cursor && (cursor.currentCount == 0 || to == cursor)) {
             if (from.isResolved()) {
                 return;
+            }
+
+            // If cursor is to and not emty we need to drop first into from if from is not an output
+            if (to == cursor && cursor.currentCount > 0 && !isOutput(from.action)) {
+                plan.add(new Click(Click.Type.LEFT, from.javaSlot));
             }
 
             // Pick up everything

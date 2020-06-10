@@ -40,6 +40,7 @@ public class JavaSetSlotTranslator extends PacketTranslator<ServerSetSlotPacket>
 
     @Override
     public void translate(ServerSetSlotPacket packet, GeyserSession session) {
+        System.err.println(packet);
         //@TODO Do we need any of this still?
 //        if (packet.getWindowId() == 255 && packet.getSlot() == -1) { //cursor
 //            if (session.getCraftSlot() != 0)

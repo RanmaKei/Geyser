@@ -48,6 +48,7 @@ public class Refresh extends BaseAction {
 
     @Override
     public void execute(ActionPlan plan) {
+        if (true) return;
 
         // Only execute if we are the only refresh in the queue
         if (plan.getActions().stream().anyMatch(a -> a instanceof Refresh)) {
@@ -56,7 +57,7 @@ public class Refresh extends BaseAction {
 
         final short actionId = (short) plan.getInventory().getTransactionId().getAndIncrement();
         ClientWindowActionPacket clickPacket = new ClientWindowActionPacket(plan.getInventory().getId(),
-                actionId, -1, InventoryUtils.REFRESH_ITEM, WindowAction.CLICK_ITEM, ClickItemParam.LEFT_CLICK);
+                actionId, -800, InventoryUtils.REFRESH_ITEM, WindowAction.CLICK_ITEM, ClickItemParam.LEFT_CLICK);
 
         plan.getSession().sendDownstreamPacket(clickPacket);
         plan.getSession().sendDownstreamPacket(new ClientConfirmTransactionPacket(plan.getInventory().getId(), actionId, true));
