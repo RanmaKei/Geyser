@@ -139,6 +139,7 @@ public class Click extends BaseAction implements Confirmation {
             ClientConfirmTransactionPacket confirmPacket = new ClientConfirmTransactionPacket(transaction.getInventory().getId(),
                     actionId, true);
             transaction.getSession().sendDownstreamPacket(confirmPacket);
+            return;
         }
 
         transaction.next();

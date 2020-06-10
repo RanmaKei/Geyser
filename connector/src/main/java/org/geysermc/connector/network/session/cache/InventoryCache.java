@@ -42,10 +42,6 @@ public class InventoryCache {
     private Inventory openInventory;
 
     @Getter
-    @Setter
-    protected Transaction transaction;
-
-    @Getter
     private Int2ObjectMap<Inventory> inventories = new Int2ObjectOpenHashMap<>();
 
     public InventoryCache(GeyserSession session) {

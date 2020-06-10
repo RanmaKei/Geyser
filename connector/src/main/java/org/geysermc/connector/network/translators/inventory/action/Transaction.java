@@ -25,19 +25,16 @@
 
 package org.geysermc.connector.network.translators.inventory.action;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.inventory.InventoryTranslator;
+import org.geysermc.connector.utils.InventoryUtils;
 
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.PriorityQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A transaction is created when changes are made to the Inventory. This will store changes sent to us from
@@ -46,8 +43,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 @ToString(onlyExplicitlyIncluded = true)
-@RequiredArgsConstructor
 public class Transaction {
+    public static final List<Transaction> TRANSACTIONS = new ArrayList<>();
+    public static Transaction CURRENT_TRANSACTION = null;
 
     @ToString.Include
     private final PriorityQueue<BaseAction> actions = new PriorityQueue<>();
@@ -59,30 +57,28 @@ public class Transaction {
     private final InventoryTranslator translator;
     private final Inventory inventory;
 
+    private static boolean running = false;
+
+    private Transaction(GeyserSession session, InventoryTranslator translator, Inventory inventory) {
+        this.session = session;
+        this.translator = translator;
+        this.inventory = inventory;
+    }
+
     public void add(BaseAction action) {
         action.setTransaction(this);
         actions.add(action);
     }
 
     /**
-     * Start Execution of the Transaction
+     * Start Transactions
      */
-    public void execute() {
+    void start() {
         if (actions.isEmpty()) {
+            nextTransaction();
             return;
         }
-
         next();
-
-//        // Update session at end
-//        add(new Execute(() -> {
-//            session.setActionPlan(null);
-//        }, 10));
-
-//        /*if (refresh) {
-//            translator.updateInventory(session, inventory);
-//            InventoryUtils.updateCursor(session);
-//        }*/
     }
 
     /**
@@ -91,12 +87,49 @@ public class Transaction {
     public void next() {
         if (actions.isEmpty()) {
             currentAction = null;
+            nextTransaction();
             return;
         }
 
         currentAction = actions.remove();
         System.err.println("Executing: " + currentAction);
         currentAction.execute();
+    }
+
+    public static Transaction of(GeyserSession session, InventoryTranslator translator, Inventory inventory) {
+        Transaction ret = new Transaction(session, translator, inventory);
+        TRANSACTIONS.add(ret);
+        return ret;
+    }
+
+    /**
+     * Start Execution of Transactions if not already started
+     */
+    public static void execute() {
+        if (running || TRANSACTIONS.isEmpty()) {
+            return;
+        }
+
+        running = true;
+
+        nextTransaction();
+    }
+
+    public static void nextTransaction() {
+        if (TRANSACTIONS.isEmpty()) {
+            CURRENT_TRANSACTION = null;
+            running = false;
+            return;
+        }
+
+        CURRENT_TRANSACTION = TRANSACTIONS.remove(0);
+        CURRENT_TRANSACTION.start();
+    }
+
+    public static void cancel() {
+        running = false;
+        TRANSACTIONS.clear();
+        CURRENT_TRANSACTION = null;
     }
 
 }

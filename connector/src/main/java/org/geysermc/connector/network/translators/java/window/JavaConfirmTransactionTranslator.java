@@ -40,12 +40,12 @@ public class JavaConfirmTransactionTranslator extends PacketTranslator<ServerCon
     @Override
     public void translate(ServerConfirmTransactionPacket packet, GeyserSession session) {
         System.err.println(packet);
-        Transaction transaction = session.getInventoryCache().getTransaction();
+        Transaction transaction = Transaction.CURRENT_TRANSACTION;
         if (transaction == null || !(transaction.getCurrentAction() instanceof Confirmation)) {
             return;
         }
 
-        // If we have a transaction and its a click we confirm it
+        // If we have a transaction and its a confirmation we confirm it
         ((Confirmation) transaction.getCurrentAction()).confirm(packet.isAccepted());
 
 

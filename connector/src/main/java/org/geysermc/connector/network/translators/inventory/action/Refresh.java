@@ -50,7 +50,7 @@ public class Refresh extends BaseAction implements Confirmation {
     public void execute() {
         actionId = (short) transaction.getInventory().getTransactionId().getAndIncrement();
         ClientWindowActionPacket clickPacket = new ClientWindowActionPacket(transaction.getInventory().getId(),
-                actionId, -800, InventoryUtils.REFRESH_ITEM,
+                actionId, -1, InventoryUtils.REFRESH_ITEM,
                 WindowAction.CLICK_ITEM, ClickItemParam.LEFT_CLICK);
 
         transaction.getSession().sendDownstreamPacket(clickPacket);

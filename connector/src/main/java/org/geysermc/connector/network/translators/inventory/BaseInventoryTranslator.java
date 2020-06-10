@@ -37,6 +37,7 @@ import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.inventory.action.BaseAction;
 import org.geysermc.connector.network.translators.inventory.action.Click;
+import org.geysermc.connector.network.translators.inventory.action.Execute;
 import org.geysermc.connector.network.translators.inventory.action.Refresh;
 import org.geysermc.connector.network.translators.inventory.action.Transaction;
 import org.geysermc.connector.network.translators.inventory.action.Drop;
@@ -85,102 +86,112 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
 
     @Override
     public void translateActions(GeyserSession session, Inventory inventory, List<InventoryActionData> actions) {
-        List<ActionData> actionDataList = new ArrayList<>();
-        ActionData cursor = null;
+        Transaction transaction = Transaction.of(session, BaseInventoryTranslator.this, inventory);
+        transaction.add(new Execute(() -> {
+            List<ActionData> actionDataList = new ArrayList<>();
+            ActionData cursor = null;
 
-        for (InventoryActionData action : actions) {
-            ActionData actionData = new ActionData(this, action);
+            for (InventoryActionData action : actions) {
+                ActionData actionData = new ActionData(BaseInventoryTranslator.this, action);
 
-            if (isCursor(action)) {
-                cursor = actionData;
+                if (isCursor(action)) {
+                    cursor = actionData;
+                }
+                actionDataList.add(actionData);
             }
-            actionDataList.add(actionData);
-        }
 
-        if (cursor == null) {
-            // Create a fake cursor action based upon current known cursor
-            ItemStack playerCursor = session.getInventory().getCursor();
-            if (playerCursor != null) {
-                cursor = new ActionData(this, new InventoryActionData(
-                        InventorySource.fromContainerWindowId(124),
-                        -1,
-                        ItemTranslator.translateToBedrock(session, playerCursor),
-                        ItemTranslator.translateToBedrock(session, playerCursor)
-                ));
-            } else {
-                cursor = new ActionData(this, new InventoryActionData(
-                        InventorySource.fromContainerWindowId(124),
-                        -1,
-                        ItemData.AIR,
-                        ItemData.AIR
-                ));
-            }
-            actionDataList.add(cursor);
-        }
-
-        Transaction transaction = new Transaction(session, this, inventory);
-        session.getInventoryCache().setTransaction(transaction);
-
-        outer:
-        while (actionDataList.size() > 0) {
-            ActionData a1 = actionDataList.remove(0);
-
-            for (ActionData a2 : actionDataList) {
-
-                // Check if a1 is already fulfilled
-                if (a1.isResolved()) {
-//                    System.err.println("a1 is resolved: " + a1);
-                    continue outer;
-                }
-
-                // Check if a2 is already fulfilled
-                if (a2.isResolved()) {
-//                    System.err.println("a2 is reoslved: " + a2);
-                    continue;
-                }
-
-                // Directions have to be opposite or equal
-                if ((a1.currentCount > a1.toCount && a2.currentCount > a2.toCount)
-                        || (a1.currentCount < a1.toCount && a2.currentCount < a2.toCount)) {
-                    continue;
-                }
-
-                // Work out direction
-                ActionData from;
-                ActionData to;
-                if (a1.currentCount > a1.toCount) {
-                    from = a1;
-                    to = a2;
+            if (cursor == null) {
+                // Create a fake cursor action based upon current known cursor
+                ItemStack playerCursor = session.getInventory().getCursor();
+                if (playerCursor != null) {
+                    cursor = new ActionData(BaseInventoryTranslator.this, new InventoryActionData(
+                            InventorySource.fromContainerWindowId(124),
+                            -1,
+                            ItemTranslator.translateToBedrock(session, playerCursor),
+                            ItemTranslator.translateToBedrock(session, playerCursor)
+                    ));
                 } else {
-                    from = a2;
-                    to = a1;
+                    cursor = new ActionData(BaseInventoryTranslator.this, new InventoryActionData(
+                            InventorySource.fromContainerWindowId(124),
+                            -1,
+                            ItemData.AIR,
+                            ItemData.AIR
+                    ));
                 }
-
-                // Check if to and from cancel each other out
-                // @TODO This may not be needed anymore as we now filter useless packets
-                if (from.javaSlot == to.javaSlot
-                        && from.remaining() == to.remaining()
-                        && from.action.getSource().getContainerId() == to.action.getSource().getContainerId()
-                ) {
-                    from.currentCount = from.toCount;
-                    to.currentCount = to.toCount;
-                    continue outer;
-                }
-
-                // Process
-                processAction(transaction, cursor, from, to);
+                actionDataList.add(cursor);
             }
 
-            // Log unresolved for the moment
-            if (a1.remaining() > 0) {
-                GeyserConnector.getInstance().getLogger().warning("Inventory Items Unresolved: " + a1);
-                transaction.add(new Refresh());
+
+
+            outer:
+            while (actionDataList.size() > 0) {
+                ActionData a1 = actionDataList.remove(0);
+
+                for (ActionData a2 : actionDataList) {
+
+                    // Check if a1 is already fulfilled
+                    if (a1.isResolved()) {
+//                    System.err.println("a1 is resolved: " + a1);
+                        continue outer;
+                    }
+
+                    // Check if a2 is already fulfilled
+                    if (a2.isResolved()) {
+//                    System.err.println("a2 is reoslved: " + a2);
+                        continue;
+                    }
+
+                    // Directions have to be opposite or equal
+                    if ((a1.currentCount > a1.toCount && a2.currentCount > a2.toCount)
+                            || (a1.currentCount < a1.toCount && a2.currentCount < a2.toCount)) {
+                        continue;
+                    }
+
+                    // Work out direction
+                    ActionData from;
+                    ActionData to;
+                    if (a1.currentCount > a1.toCount) {
+                        from = a1;
+                        to = a2;
+                    } else {
+                        from = a2;
+                        to = a1;
+                    }
+
+                    // Check if to and from cancel each other out
+                    // @TODO This may not be needed anymore as we now filter useless packets
+                    if (from.javaSlot == to.javaSlot
+                            && from.remaining() == to.remaining()
+                            && from.action.getSource().getContainerId() == to.action.getSource().getContainerId()
+                    ) {
+                        from.currentCount = from.toCount;
+                        to.currentCount = to.toCount;
+                        continue outer;
+                    }
+
+                    // Process
+                    processAction(transaction, cursor, from, to);
+                }
+
+                // Log unresolved for the moment
+                if (a1.remaining() > 0) {
+                    GeyserConnector.getInstance().getLogger().warning("Inventory Items Unresolved: " + a1);
+                    transaction.add(new Refresh());
+                }
             }
-        }
 
-        System.err.println(transaction);
+            // Update cursor at end
+            transaction.add(new Execute(() -> {
+                InventoryUtils.updateCursor(session);
+                this.updateInventory(session, inventory);
+            }, 100));
 
-        transaction.execute();
+            System.err.println(transaction);
+        }));
+
+        System.err.println("TRANSACTIONS: " + Transaction.TRANSACTIONS);
+
+        Transaction.execute();
     }
 
     protected void processAction(Transaction transaction, ActionData cursor, ActionData from, ActionData to) {
@@ -409,8 +420,11 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                     }
                 }
             }
-            if (acceptable && !slotBlacklist.contains(i))
+            if (acceptable && !slotBlacklist.contains(i)) {
+                System.err.println("TEMPORARY: " + i);
                 return i;
+            }
+
         }
         //could not find a viable temp slot
         return -1;
