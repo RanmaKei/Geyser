@@ -110,10 +110,10 @@ public class CraftingInventoryTranslator extends BaseInventoryTranslator {
 
     @Override
     public void translateActions(GeyserSession session, Inventory inventory, List<InventoryActionData> actions) {
-        // Remove Useless Actions
-        actions = actions.stream()
-                .filter(a -> a.getSource().getContainerId() != ContainerId.CRAFTING_USE_INGREDIENT)
-                .collect(Collectors.toList());
+        // Remove Useless Packet
+        if (actions.stream().anyMatch(a -> a.getSource().getContainerId() == ContainerId.CRAFTING_USE_INGREDIENT)) {
+            return;
+        }
 
         super.translateActions(session, inventory, actions);
     }

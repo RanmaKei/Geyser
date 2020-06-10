@@ -174,15 +174,11 @@ public class PlayerInventoryTranslator extends BaseInventoryTranslator {
 
     @Override
     public boolean isOutput(InventoryActionData action) {
-        return bedrockSlotToJava(action) == 0;
+        return action.getSource().getContainerId() == ContainerId.CRAFTING_RESULT;
     }
 
     @Override
     protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
-        if (to.action.getSource().getContainerId() == ContainerId.CRAFTING_USE_INGREDIENT) {
-            return;
-        }
-
         super.processAction(session, inventory, plan, cursor, from, to);
 
         if (isOutput(from.action)) {
@@ -233,6 +229,11 @@ public class PlayerInventoryTranslator extends BaseInventoryTranslator {
                         break;
                 }
             }
+            return;
+        }
+
+        // Remove Useless Packet
+        if (actions.stream().anyMatch(a -> a.getSource().getContainerId() == ContainerId.CRAFTING_USE_INGREDIENT)) {
             return;
         }
 

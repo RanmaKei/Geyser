@@ -27,6 +27,7 @@ package org.geysermc.connector.network.translators.inventory.action;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
@@ -34,12 +35,15 @@ import org.geysermc.connector.network.translators.inventory.InventoryTranslator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
 
 @Getter
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 @AllArgsConstructor
 public class ActionPlan {
-    private final List<BaseAction> actions = new ArrayList<>();
+
+    @ToString.Include
+    private final PriorityQueue<BaseAction> actions = new PriorityQueue<>();
 
     private final GeyserSession session;
     private final InventoryTranslator translator;
@@ -51,7 +55,7 @@ public class ActionPlan {
 
     public void execute() {
         while (!actions.isEmpty()) {
-            BaseAction action = actions.remove(0);
+            BaseAction action = actions.remove();
             action.execute(this);
         }
 

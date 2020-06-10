@@ -26,7 +26,38 @@
 
 package org.geysermc.connector.network.translators.inventory.action;
 
-public abstract class BaseAction {
+import lombok.Getter;
+
+import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+@Getter
+public abstract class BaseAction implements Comparator<BaseAction>, Comparable<BaseAction>  {
+    final static AtomicInteger SEQUENCE = new AtomicInteger();
+    final private int seq = SEQUENCE.getAndIncrement();
 
     public abstract void execute(ActionPlan plan);
+
+    public int getWeight() {
+        return 0;
+    }
+
+    @Override
+    public int compare(BaseAction left, BaseAction right) {
+        int ret = left.getWeight() - right.getWeight();
+        if (ret == 0) {
+            return left.getSeq() - right.getSeq();
+        }
+        return ret;
+    }
+
+    @Override
+    public int compareTo(BaseAction other) {
+        int ret = getWeight() - other.getWeight();
+        if (ret == 0) {
+            return getSeq() - other.getSeq();
+        }
+        return ret;
+    }
 }

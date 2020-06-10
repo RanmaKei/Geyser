@@ -36,19 +36,28 @@ import org.geysermc.connector.utils.InventoryUtils;
 
 /**
  * Send an invalid click to refresh all slots
+ *
+ * We will filter out repeat refreshes and ensre our executation happens last in the plan
  */
 @Getter
 @ToString
 @AllArgsConstructor
 public class Refresh extends BaseAction {
 
+    private final int weight = 10;
+
     @Override
     public void execute(ActionPlan plan) {
+
+        // Only execute if we are the only refresh in the queue
+        if (plan.getActions().stream().anyMatch(a -> a instanceof Refresh)) {
+            return;
+        }
+
         final short actionId = (short) plan.getInventory().getTransactionId().getAndIncrement();
         ClientWindowActionPacket clickPacket = new ClientWindowActionPacket(plan.getInventory().getId(),
                 actionId, -1, InventoryUtils.REFRESH_ITEM, WindowAction.CLICK_ITEM, ClickItemParam.LEFT_CLICK);
 
-        System.err.println("RefreshPacket: " + clickPacket);
         plan.getSession().sendDownstreamPacket(clickPacket);
         plan.getSession().sendDownstreamPacket(new ClientConfirmTransactionPacket(plan.getInventory().getId(), actionId, true));
     }

@@ -57,10 +57,6 @@ public class PlayerInventoryTranslator extends org.geysermc.connector.network.tr
 
     @Override
     protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
-        if (to.action.getSource().getContainerId() == ContainerId.CRAFTING_USE_INGREDIENT) {
-            return;
-        }
-
         super.processAction(session, inventory, plan, cursor, from, to);
 
         if (isOutput(from.action)) {
@@ -112,6 +108,11 @@ public class PlayerInventoryTranslator extends org.geysermc.connector.network.tr
 
                 }
             }
+            return;
+        }
+
+        // Remove Useless Packet
+        if (actions.stream().anyMatch(a -> a.getSource().getContainerId() == ContainerId.CRAFTING_USE_INGREDIENT)) {
             return;
         }
 
