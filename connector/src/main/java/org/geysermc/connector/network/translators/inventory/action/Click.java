@@ -33,6 +33,7 @@ import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientConfi
 import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientWindowActionPacket;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.geysermc.connector.inventory.PlayerInventory;
 import org.geysermc.connector.utils.InventoryUtils;
@@ -42,74 +43,105 @@ import org.geysermc.connector.utils.InventoryUtils;
  */
 @Getter
 @ToString
-@AllArgsConstructor
-public class Click extends BaseAction {
+public class Click extends BaseAction implements Confirmation {
 
     private final Type clickType;
     private final int javaSlot;
 
+    @Setter
+    private boolean refresh;
+
+    private short actionId;
+
+    public Click(Type clickType, int javaSlot, boolean refresh) {
+        this.clickType = clickType;
+        this.javaSlot = javaSlot;
+        this.refresh = refresh;
+    }
+
+    public Click(Type clickType, int javaSlot) {
+        this(clickType, javaSlot, false);
+    }
+
     @Override
-    public void execute(ActionPlan plan) {
-        ItemStack clickedItem = plan.getInventory().getItem(javaSlot);
-        PlayerInventory playerInventory = plan.getSession().getInventory();
-        final short actionId = (short) plan.getInventory().getTransactionId().getAndIncrement();
+    public void execute() {
+        ItemStack clickedItem = transaction.getInventory().getItem(javaSlot);
+        PlayerInventory playerInventory = transaction.getSession().getInventory();
+        actionId = (short) transaction.getInventory().getTransactionId().getAndIncrement();
         final ItemStack cursorItem = playerInventory.getCursor();
+
+        ClientWindowActionPacket clickPacket;
 
         switch (clickType) {
             case LEFT:
-            case RIGHT:
-                ClientWindowActionPacket clickPacket = new ClientWindowActionPacket(plan.getInventory().getId(),
-                        actionId, javaSlot, clickedItem,
-                        WindowAction.CLICK_ITEM, clickType == Type.LEFT ? ClickItemParam.LEFT_CLICK : ClickItemParam.RIGHT_CLICK);
+                clickPacket = new ClientWindowActionPacket(transaction.getInventory().getId(),
+                        actionId, javaSlot, refresh ? InventoryUtils.REFRESH_ITEM : clickedItem,
+                        WindowAction.CLICK_ITEM, ClickItemParam.LEFT_CLICK);
 
-                switch (clickType) {
-                    case LEFT:
-                        if (!InventoryUtils.canStack(cursorItem, clickedItem)) {
-                            playerInventory.setCursor(clickedItem);
-                            plan.getInventory().setItem(javaSlot, cursorItem);
-                        } else {
-                            playerInventory.setCursor(null);
-                            plan.getInventory().setItem(javaSlot, new ItemStack(clickedItem.getId(),
-                                    clickedItem.getAmount() + cursorItem.getAmount(), clickedItem.getNbt()));
-                        }
-                        break;
-                    case RIGHT:
-                        if (cursorItem == null && clickedItem != null) {
-                            ItemStack halfItem = new ItemStack(clickedItem.getId(),
-                                    clickedItem.getAmount() / 2, clickedItem.getNbt());
-                            plan.getInventory().setItem(javaSlot, halfItem);
-                            playerInventory.setCursor(new ItemStack(clickedItem.getId(),
-                                    clickedItem.getAmount() - halfItem.getAmount(), clickedItem.getNbt()));
-                        } else if (cursorItem != null && clickedItem == null) {
-                            playerInventory.setCursor(new ItemStack(cursorItem.getId(),
-                                    cursorItem.getAmount() - 1, cursorItem.getNbt()));
-                            plan.getInventory().setItem(javaSlot, new ItemStack(cursorItem.getId(),
-                                    1, cursorItem.getNbt()));
-                        } else if (InventoryUtils.canStack(cursorItem, clickedItem)) {
-                            playerInventory.setCursor(new ItemStack(cursorItem.getId(),
-                                    cursorItem.getAmount() - 1, cursorItem.getNbt()));
-                            plan.getInventory().setItem(javaSlot, new ItemStack(clickedItem.getId(),
-                                    clickedItem.getAmount() + 1, clickedItem.getNbt()));
-                        }
-                        break;
+                if (!InventoryUtils.canStack(cursorItem, clickedItem)) {
+                    playerInventory.setCursor(clickedItem);
+                    transaction.getInventory().setItem(javaSlot, cursorItem);
+                } else {
+                    playerInventory.setCursor(null);
+                    transaction.getInventory().setItem(javaSlot, new ItemStack(clickedItem.getId(),
+                            clickedItem.getAmount() + cursorItem.getAmount(), clickedItem.getNbt()));
                 }
-                plan.getSession().sendDownstreamPacket(clickPacket);
-                plan.getSession().sendDownstreamPacket(new ClientConfirmTransactionPacket(plan.getInventory().getId(), actionId, true));
+                transaction.getSession().sendDownstreamPacket(clickPacket);
+                break;
+
+            case RIGHT:
+                clickPacket = new ClientWindowActionPacket(transaction.getInventory().getId(),
+                        actionId, javaSlot, refresh ? InventoryUtils.REFRESH_ITEM : clickedItem,
+                        WindowAction.CLICK_ITEM, ClickItemParam.RIGHT_CLICK);
+
+                if (cursorItem == null && clickedItem != null) {
+                    ItemStack halfItem = new ItemStack(clickedItem.getId(),
+                            clickedItem.getAmount() / 2, clickedItem.getNbt());
+                    transaction.getInventory().setItem(javaSlot, halfItem);
+                    playerInventory.setCursor(new ItemStack(clickedItem.getId(),
+                            clickedItem.getAmount() - halfItem.getAmount(), clickedItem.getNbt()));
+                } else if (cursorItem != null && clickedItem == null) {
+                    playerInventory.setCursor(new ItemStack(cursorItem.getId(),
+                            cursorItem.getAmount() - 1, cursorItem.getNbt()));
+                    transaction.getInventory().setItem(javaSlot, new ItemStack(cursorItem.getId(),
+                            1, cursorItem.getNbt()));
+                } else if (InventoryUtils.canStack(cursorItem, clickedItem)) {
+                    playerInventory.setCursor(new ItemStack(cursorItem.getId(),
+                            cursorItem.getAmount() - 1, cursorItem.getNbt()));
+                    transaction.getInventory().setItem(javaSlot, new ItemStack(clickedItem.getId(),
+                            clickedItem.getAmount() + 1, clickedItem.getNbt()));
+                }
+                transaction.getSession().sendDownstreamPacket(clickPacket);
                 break;
 
             case SHIFT_CLICK:
-                clickedItem = plan.getInventory().getItem(javaSlot);
+                clickedItem = transaction.getInventory().getItem(javaSlot);
 
                 ClientWindowActionPacket shiftClickPacket = new ClientWindowActionPacket(
-                        plan.getInventory().getId(),
-                        plan.getInventory().getTransactionId().getAndIncrement(),
+                        transaction.getInventory().getId(),
+                        transaction.getInventory().getTransactionId().getAndIncrement(),
                         javaSlot, clickedItem,
                         WindowAction.SHIFT_CLICK_ITEM,
                         ShiftClickItemParam.LEFT_CLICK
                 );
-                plan.getSession().sendDownstreamPacket(shiftClickPacket);
+                transaction.getSession().sendDownstreamPacket(shiftClickPacket);
                 break;
         }
+    }
+
+    /**
+     * Called when we received a server confirmation packet.
+     */
+    @Override
+    public void confirm(boolean accepted) {
+        if (!accepted) {
+            System.err.println("NOT ACCEPTED, RETRYING");
+            ClientConfirmTransactionPacket confirmPacket = new ClientConfirmTransactionPacket(transaction.getInventory().getId(),
+                    actionId, true);
+            transaction.getSession().sendDownstreamPacket(confirmPacket);
+        }
+
+        transaction.next();
     }
 
     public enum Type {

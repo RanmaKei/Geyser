@@ -26,42 +26,8 @@
 
 package org.geysermc.connector.network.translators.inventory.action;
 
-import lombok.Getter;
-import lombok.Setter;
+public interface Confirmation {
 
-import java.util.Comparator;
-import java.util.concurrent.atomic.AtomicInteger;
+    void confirm(boolean accepted);
 
-@Getter
-public abstract class BaseAction implements Comparable<BaseAction>, Comparator<BaseAction> {
-    // These handle tie breaking with equal priority actions to ensure they are executing FIFO
-    final static AtomicInteger SEQUENCE = new AtomicInteger();
-    final private int seq = SEQUENCE.getAndIncrement();
-
-    @Setter
-    protected Transaction transaction;
-
-    public abstract void execute();
-
-    public int getWeight() {
-        return 0;
-    }
-
-    @Override
-    public int compare(BaseAction left, BaseAction right) {
-        int ret = left.getWeight() - right.getWeight();
-        if (ret == 0) {
-            return left.getSeq() - right.getSeq();
-        }
-        return ret;
-    }
-
-    @Override
-    public int compareTo(BaseAction other) {
-        int ret = getWeight() - other.getWeight();
-        if (ret == 0) {
-            return getSeq() - other.getSeq();
-        }
-        return ret;
-    }
 }

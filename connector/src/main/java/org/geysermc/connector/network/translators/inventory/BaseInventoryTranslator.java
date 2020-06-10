@@ -30,7 +30,6 @@ import com.nukkitx.protocol.bedrock.data.ContainerId;
 import com.nukkitx.protocol.bedrock.data.InventoryActionData;
 import com.nukkitx.protocol.bedrock.data.InventorySource;
 import com.nukkitx.protocol.bedrock.data.ItemData;
-import lombok.Data;
 import lombok.NonNull;
 import lombok.ToString;
 import org.geysermc.connector.GeyserConnector;
@@ -38,9 +37,9 @@ import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.inventory.action.BaseAction;
 import org.geysermc.connector.network.translators.inventory.action.Click;
-import org.geysermc.connector.network.translators.inventory.action.ActionPlan;
-import org.geysermc.connector.network.translators.inventory.action.Drop;
 import org.geysermc.connector.network.translators.inventory.action.Refresh;
+import org.geysermc.connector.network.translators.inventory.action.Transaction;
+import org.geysermc.connector.network.translators.inventory.action.Drop;
 import org.geysermc.connector.network.translators.item.ItemTranslator;
 import org.geysermc.connector.utils.InventoryUtils;
 
@@ -119,7 +118,8 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
             actionDataList.add(cursor);
         }
 
-        ActionPlan plan = new ActionPlan(session, this, inventory);
+        Transaction transaction = new Transaction(session, this, inventory);
+        session.getInventoryCache().setTransaction(transaction);
 
         outer:
         while (actionDataList.size() > 0) {
@@ -129,13 +129,13 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
 
                 // Check if a1 is already fulfilled
                 if (a1.isResolved()) {
-                    System.err.println("a1 is resolved: " + a1);
+//                    System.err.println("a1 is resolved: " + a1);
                     continue outer;
                 }
 
                 // Check if a2 is already fulfilled
                 if (a2.isResolved()) {
-                    System.err.println("a2 is reoslved: " + a2);
+//                    System.err.println("a2 is reoslved: " + a2);
                     continue;
                 }
 
@@ -168,23 +168,22 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                 }
 
                 // Process
-                processAction(session, inventory, plan, cursor, from, to);
+                processAction(transaction, cursor, from, to);
             }
 
             // Log unresolved for the moment
             if (a1.remaining() > 0) {
                 GeyserConnector.getInstance().getLogger().warning("Inventory Items Unresolved: " + a1);
+                transaction.add(new Refresh());
             }
         }
 
-        for(BaseAction p : plan.getActions()) {
-            System.err.println(p);
-        }
+        System.err.println(transaction);
 
-        plan.execute();
+        transaction.execute();
     }
 
-    protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
+    protected void processAction(Transaction transaction, ActionData cursor, ActionData from, ActionData to) {
         System.err.println("");
         System.err.println("from: " + from);
         System.err.println("to: " + to);
@@ -195,20 +194,20 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
         if (to.action.getSource().getFlag() == InventorySource.Flag.DROP_ITEM) {
 
             // Is it dropped without a window?
-            if (session.getInventoryCache().getOpenInventory() == null
+            if (transaction.getSession().getInventoryCache().getOpenInventory() == null
                     && from.action.getSource().getContainerId() == ContainerId.INVENTORY
-                    && from.action.getSlot() == session.getInventory().getHeldItemSlot()) {
+                    && from.action.getSlot() == transaction.getSession().getInventory().getHeldItemSlot()) {
 
                 // Dropping everything?
                 if (from.toCount == 0 && from.currentCount <= to.remaining()) {
                     to.currentCount = from.currentCount;
                     from.currentCount =0;
-                    plan.add(new Drop(Drop.Type.DROP_STACK_HOTBAR, from.javaSlot));
+                    transaction.add(new Drop(Drop.Type.DROP_STACK_HOTBAR, from.javaSlot));
                 } else {
                     while (from.remaining() > 0 && to.remaining() > 0) {
                         to.currentCount++;
                         from.currentCount--;
-                        plan.add(new Drop(Drop.Type.DROP_ITEM_HOTBAR, from.javaSlot));
+                        transaction.add(new Drop(Drop.Type.DROP_ITEM_HOTBAR, from.javaSlot));
                     }
                 }
             } else {
@@ -216,12 +215,12 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                 if (from.toCount == 0 && from.currentCount <= to.remaining()) {
                     to.currentCount += from.currentCount;
                     from.currentCount = 0;
-                    plan.add(new Drop(Drop.Type.DROP_STACK, from.javaSlot));
+                    transaction.add(new Drop(Drop.Type.DROP_STACK, from.javaSlot));
                 } else {
                     while (from.remaining() > 0 && to.remaining() > 0) {
                         to.currentCount++;
                         from.currentCount--;
-                        plan.add(new Drop(Drop.Type.DROP_ITEM, from.javaSlot));
+                        transaction.add(new Drop(Drop.Type.DROP_ITEM, from.javaSlot));
                     }
                 }
             }
@@ -232,19 +231,19 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
         if ((cursor.currentCount == 0 || cursor == from  || cursor == to)
             && (from.getCurrentItem().equals(to.getToItem())
                     && to.getCurrentItem().equals(from.getToItem())
-                    && from.currentCount == to.remaining()
+                    && from.currentCount == to.toCount
                     && !from.getCurrentItem().equals(to.getCurrentItem()))) {
 
             if (from != cursor) {
-                plan.add(new Click(Click.Type.LEFT, from.javaSlot));
+                transaction.add(new Click(Click.Type.LEFT, from.javaSlot));
             }
 
             if (to != cursor) {
-                plan.add(new Click(Click.Type.LEFT, to.javaSlot));
+                transaction.add(new Click(Click.Type.LEFT, to.javaSlot));
             }
 
             if (from != cursor && to.currentCount > 0) {
-                plan.add(new Click(Click.Type.LEFT, from.javaSlot));
+                transaction.add(new Click(Click.Type.LEFT, from.javaSlot));
             }
 
             int currentCount = from.currentCount;
@@ -258,25 +257,20 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
         }
 
         // Incompatible Items?
-        if (!from.getCurrentItem().equals(to.getToItem())
+        if (!from.getCurrentItem().equals(to.getCurrentItem())
                 && !from.getCurrentItem().equals(ItemData.AIR)
-                && !to.getToItem().equals(ItemData.AIR)) {
+                && !to.getCurrentItem().equals(ItemData.AIR)) {
             return;
         }
 
         // Can we drop anything from cursor onto to?
-        System.err.println("cursor != to: " +(cursor != to));
-        System.err.println("to.remaining() > 0: " + (to.remaining() > 0));
-        System.err.println("cursor.currentCount > 0: " +(cursor.currentCount > 0));
-        System.err.println("cursor.getCurrentItem().equals(to.getToItem()): " +(cursor.getCurrentItem().equals(to.getToItem())));
-        System.err.println("and statement: " + (to.getCurrentItem().equals(ItemData.AIR) || to.getCurrentItem().equals(to.getToItem())));
         if (cursor != to && to.remaining() > 0 && cursor.currentCount > 0 && cursor.getCurrentItem().equals(to.getToItem())
                 && (to.getCurrentItem().equals(ItemData.AIR) || to.getCurrentItem().equals(to.getToItem()))) {
 
             // @TODO: Optimize by checking if we can left click
             to.currentItem = cursor.getCurrentItem();
             while (cursor.currentCount > 0 && to.remaining() > 0) {
-                plan.add(new Click(Click.Type.RIGHT, to.javaSlot));
+                transaction.add(new Click(Click.Type.RIGHT, to.javaSlot));
                 cursor.currentCount--;
                 to.currentCount++;
             }
@@ -288,14 +282,23 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                 return;
             }
 
-            // If cursor is to and not emty we need to drop first into from if from is not an output
-            if (to == cursor && cursor.currentCount > 0 && !isOutput(from.action)) {
-                plan.add(new Click(Click.Type.LEFT, from.javaSlot));
+            // If cursor is to and not empty we will have to use a spot slot if possible
+            int spareSlot = -1;
+            int spareCount = 0;
+            if (to == cursor && cursor.currentCount > 0) {
+                spareSlot = findTempSlot(transaction.getInventory(), transaction.getSession().getInventory().getCursor(), new ArrayList<>(), true);
+                if (spareSlot == -1) {
+                    // Failed, so we abort which will force a refresh if a mismatch occurs
+                    return;
+                }
+                transaction.add(new Click(Click.Type.LEFT, spareSlot));
+                spareCount = cursor.currentCount;
+                cursor.currentCount = 0;
             }
 
             // Pick up everything
             // @TODO: Maybe optimize here by seeing if we can pick up half and slice it closer to the amount
-            plan.add(new Click(Click.Type.LEFT, from.javaSlot));
+            transaction.add(new Click(Click.Type.LEFT, from.javaSlot));
             cursor.currentCount += from.currentCount;
             cursor.currentItem = from.getCurrentItem();
             from.currentCount = 0;
@@ -303,9 +306,9 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
             // Drop what we don't need if not an output - NOTE This has the chance of leaking items to the cursor
             // due to the fact bedrock allows arbitrary pickup amounts.
             int leak = 0;
-            while(from.remaining() > 0) {
+            while (from.remaining() > 0) {
                 if (!isOutput(from.action)) {
-                    plan.add(new Click(Click.Type.RIGHT, from.javaSlot));
+                    transaction.add(new Click(Click.Type.RIGHT, from.javaSlot));
                     cursor.currentCount--;
                     from.currentCount++;
                 } else {
@@ -318,21 +321,25 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
             if (to != cursor) {
                 to.currentItem = cursor.getCurrentItem();
                 while (to.remaining() > 0 && cursor.currentCount > 0) {
-                    plan.add(new Click(Click.Type.RIGHT, to.javaSlot));
+                    transaction.add(new Click(Click.Type.RIGHT, to.javaSlot));
                     cursor.currentCount--;
                     to.currentCount++;
                 }
 
                 // If we have leaks we try drop everything else onto to
                 if (leak > 0) {
-                    plan.add(new Click(Click.Type.LEFT, to.javaSlot));
+                    transaction.add(new Click(Click.Type.LEFT, to.javaSlot));
                     to.toCount += leak;
                 }
             }
 
-            // Leaks so we refresh. Maybe it will be ok
-            if (leak > 0) {
-                plan.add(new Refresh());
+            // Pick up spare if needed
+            if (spareSlot != -1) {
+                while (spareCount > 0) {
+                    transaction.add(new Click(Click.Type.RIGHT, spareSlot));
+                    spareCount--;
+                    cursor.currentCount++;
+                }
             }
         } else {
             // From is the cursor, so we can assume to is not
@@ -346,7 +353,7 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                 to.currentItem = cursor.getCurrentItem();
                 cursor.currentCount = 0;
 
-                plan.add(new Click(Click.Type.LEFT, to.javaSlot));
+                transaction.add(new Click(Click.Type.LEFT, to.javaSlot));
             } else {
                 // Drop what we need onto to
                 to.currentItem = cursor.getCurrentItem();
@@ -354,7 +361,7 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                     cursor.currentCount--;
                     to.currentCount++;
 
-                    plan.add(new Click(Click.Type.RIGHT, to.javaSlot));
+                    transaction.add(new Click(Click.Type.RIGHT, to.javaSlot));
                 }
             }
         }
@@ -367,7 +374,7 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
 
             // @TODO: Optimize by checking if we can left click
             while (cursor.currentCount > 0 && to.remaining() > 0) {
-                plan.add(new Click(Click.Type.RIGHT, to.javaSlot));
+                transaction.add(new Click(Click.Type.RIGHT, to.javaSlot));
                 cursor.currentCount--;
                 to.currentCount++;
             }

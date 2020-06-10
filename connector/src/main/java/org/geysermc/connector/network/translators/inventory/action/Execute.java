@@ -40,9 +40,15 @@ import lombok.ToString;
 @AllArgsConstructor
 public class Execute extends BaseAction {
     private final Runnable runnable;
+    private final int weight;
+
+    public Execute(Runnable runnable) {
+        this(runnable, 0);
+    }
 
     @Override
-    public void execute(ActionPlan plan) {
+    public void execute() {
         runnable.run();
+        transaction.next();
     }
 }

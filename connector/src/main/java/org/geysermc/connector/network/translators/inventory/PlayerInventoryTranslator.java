@@ -36,7 +36,7 @@ import com.nukkitx.protocol.bedrock.packet.InventoryContentPacket;
 import com.nukkitx.protocol.bedrock.packet.InventorySlotPacket;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
-import org.geysermc.connector.network.translators.inventory.action.ActionPlan;
+import org.geysermc.connector.network.translators.inventory.action.Transaction;
 import org.geysermc.connector.network.translators.inventory.action.Refresh;
 import org.geysermc.connector.network.translators.item.ItemTranslator;
 import org.geysermc.connector.utils.InventoryUtils;
@@ -178,11 +178,11 @@ public class PlayerInventoryTranslator extends BaseInventoryTranslator {
     }
 
     @Override
-    protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
-        super.processAction(session, inventory, plan, cursor, from, to);
+    protected void processAction(Transaction transaction, ActionData cursor, ActionData from, ActionData to) {
+        super.processAction(transaction, cursor, from, to);
 
         if (isOutput(from.action)) {
-            plan.add(new Refresh());
+            transaction.add(new Refresh());
         }
     }
 

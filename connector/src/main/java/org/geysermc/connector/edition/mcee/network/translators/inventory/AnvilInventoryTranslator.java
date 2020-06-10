@@ -37,7 +37,7 @@ import com.nukkitx.protocol.bedrock.data.ItemData;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.inventory.BlockInventoryTranslator;
-import org.geysermc.connector.network.translators.inventory.action.ActionPlan;
+import org.geysermc.connector.network.translators.inventory.action.Transaction;
 import org.geysermc.connector.network.translators.inventory.action.Execute;
 import org.geysermc.connector.network.translators.inventory.action.Refresh;
 import org.geysermc.connector.network.translators.inventory.updater.ContainerInventoryUpdater;
@@ -80,22 +80,22 @@ public class AnvilInventoryTranslator extends BlockInventoryTranslator {
     }
 
     @Override
-    protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
+    protected void processAction(Transaction transaction, ActionData cursor, ActionData from, ActionData to) {
         // If from is ANVIL_RESULT we add a rename packet
         if (from.action.getSource().getContainerId() == ContainerId.ANVIL_RESULT) {
-            plan.add(new Execute(() -> {
+            transaction.add(new Execute(() -> {
                 ItemData item = from.action.getFromItem();
                 com.nukkitx.nbt.tag.CompoundTag tag = item.getTag();
                 String rename = tag != null ? tag.getCompound("display").getString("Name") : "";
                 ClientRenameItemPacket renameItemPacket = new ClientRenameItemPacket(rename);
-                session.sendDownstreamPacket(renameItemPacket);
+                transaction.getSession().sendDownstreamPacket(renameItemPacket);
             }));
         }
 
-        super.processAction(session, inventory, plan, cursor, from, to);
+        super.processAction(transaction, cursor, from, to);
 
         if (isOutput(from.action)) {
-            plan.add(new Refresh());
+            transaction.add(new Refresh());
         }
     }
 

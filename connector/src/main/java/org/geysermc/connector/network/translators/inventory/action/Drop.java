@@ -50,32 +50,32 @@ public class Drop extends BaseAction {
     private final int javaSlot;
 
     @Override
-    public void execute(ActionPlan plan) {
+    public void execute() {
 
 
         switch (dropType) {
             case DROP_ITEM:
             case DROP_STACK:
                 ClientWindowActionPacket dropPacket = new ClientWindowActionPacket(
-                        plan.getInventory().getId(),
-                        plan.getInventory().getTransactionId().getAndIncrement(),
+                        transaction.getInventory().getId(),
+                        transaction.getInventory().getTransactionId().getAndIncrement(),
                         javaSlot,
                         null,
                         WindowAction.DROP_ITEM,
                         dropType == Type.DROP_ITEM ? DropItemParam.DROP_FROM_SELECTED : DropItemParam.DROP_SELECTED_STACK
                 );
-                plan.getSession().sendDownstreamPacket(dropPacket);
+                transaction.getSession().sendDownstreamPacket(dropPacket);
 
-                ItemStack cursor = plan.getSession().getInventory().getCursor();
-                if (cursor != null) {
-                    plan.getSession().getInventory().setCursor(
-                            new ItemStack(
-                                    cursor.getId(),
-                                    dropType == Type.DROP_ITEM ? cursor.getAmount() - 1 : 0,
-                                    cursor.getNbt()
-                            )
-                    );
-                }
+//                ItemStack cursor = plan.getSession().getInventory().getCursor();
+//                if (cursor != null) {
+//                    plan.getSession().getInventory().setCursor(
+//                            new ItemStack(
+//                                    cursor.getId(),
+//                                    dropType == Type.DROP_ITEM ? cursor.getAmount() - 1 : 0,
+//                                    cursor.getNbt()
+//                            )
+//                    );
+//                }
                 break;
             case DROP_ITEM_HOTBAR:
             case DROP_STACK_HOTBAR:
@@ -84,20 +84,21 @@ public class Drop extends BaseAction {
                         new Position(0, 0, 0),
                         BlockFace.DOWN
                 );
-                plan.getSession().sendDownstreamPacket(actionPacket);
-                ItemStack item = plan.getSession().getInventory().getItem(javaSlot);
-                if (item != null) {
-                    plan.getSession().getInventory().setItem(
-                            javaSlot,
-                            new ItemStack(
-                                    item.getId(),
-                                    dropType == Type.DROP_ITEM_HOTBAR ? item.getAmount() - 1 : 0,
-                                    item.getNbt()
-                            )
-                    );
-                }
+                transaction.getSession().sendDownstreamPacket(actionPacket);
+                ItemStack item = transaction.getSession().getInventory().getItem(javaSlot);
+//                if (item != null) {
+//                    plan.getSession().getInventory().setItem(
+//                            javaSlot,
+//                            new ItemStack(
+//                                    item.getId(),
+//                                    dropType == Type.DROP_ITEM_HOTBAR ? item.getAmount() - 1 : 0,
+//                                    item.getNbt()
+//                            )
+//                    );
+//                }
         }
 
+        transaction.next();
     }
 
     public enum Type {

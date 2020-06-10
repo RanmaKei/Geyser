@@ -30,7 +30,7 @@ import com.nukkitx.protocol.bedrock.data.ContainerType;
 import com.nukkitx.protocol.bedrock.data.InventoryActionData;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
-import org.geysermc.connector.network.translators.inventory.action.ActionPlan;
+import org.geysermc.connector.network.translators.inventory.action.Transaction;
 import org.geysermc.connector.network.translators.inventory.updater.CursorInventoryUpdater;
 
 import java.util.List;
@@ -73,8 +73,8 @@ public class GrindstoneInventoryTranslator extends BlockInventoryTranslator {
     }
 
     @Override
-    protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
-        super.processAction(session, inventory, plan, cursor, from, to);
+    protected void processAction(Transaction transaction, ActionData cursor, ActionData from, ActionData to) {
+        super.processAction(transaction, cursor, from, to);
     }
 
     @Override

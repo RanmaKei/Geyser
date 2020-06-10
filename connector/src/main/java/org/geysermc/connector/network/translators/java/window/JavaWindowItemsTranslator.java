@@ -40,6 +40,7 @@ public class JavaWindowItemsTranslator extends PacketTranslator<ServerWindowItem
     @Override
     public void translate(ServerWindowItemsPacket packet, GeyserSession session) {
         System.err.println(packet);
+
         Inventory inventory = session.getInventoryCache().getInventories().get(packet.getWindowId());
         if (inventory == null || (packet.getWindowId() != 0 && inventory.getWindowType() == null))
             return;

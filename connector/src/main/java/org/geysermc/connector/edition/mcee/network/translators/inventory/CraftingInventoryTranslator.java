@@ -33,13 +33,12 @@ import com.nukkitx.protocol.bedrock.packet.ContainerOpenPacket;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.inventory.BaseInventoryTranslator;
-import org.geysermc.connector.network.translators.inventory.action.ActionPlan;
+import org.geysermc.connector.network.translators.inventory.action.Transaction;
 import org.geysermc.connector.network.translators.inventory.action.Refresh;
 import org.geysermc.connector.network.translators.inventory.updater.ContainerInventoryUpdater;
 import org.geysermc.connector.network.translators.inventory.updater.InventoryUpdater;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 public class CraftingInventoryTranslator extends BaseInventoryTranslator {
@@ -100,11 +99,11 @@ public class CraftingInventoryTranslator extends BaseInventoryTranslator {
     }
 
     @Override
-    protected void processAction(GeyserSession session, Inventory inventory, ActionPlan plan, ActionData cursor, ActionData from, ActionData to) {
-        super.processAction(session, inventory, plan, cursor, from, to);
+    protected void processAction(Transaction transaction, ActionData cursor, ActionData from, ActionData to) {
+        super.processAction(transaction, cursor, from, to);
 
         if (isOutput(from.action)) {
-            plan.add(new Refresh());
+            transaction.add(new Refresh());
         }
     }
 

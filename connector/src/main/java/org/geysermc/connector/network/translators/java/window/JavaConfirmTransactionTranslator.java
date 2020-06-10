@@ -30,15 +30,28 @@ import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerConfi
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
+import org.geysermc.connector.network.translators.inventory.action.Click;
+import org.geysermc.connector.network.translators.inventory.action.Confirmation;
+import org.geysermc.connector.network.translators.inventory.action.Transaction;
 
 @Translator(packet = ServerConfirmTransactionPacket.class)
 public class JavaConfirmTransactionTranslator extends PacketTranslator<ServerConfirmTransactionPacket> {
 
     @Override
     public void translate(ServerConfirmTransactionPacket packet, GeyserSession session) {
-        if (!packet.isAccepted()) {
-            ClientConfirmTransactionPacket confirmPacket = new ClientConfirmTransactionPacket(packet.getWindowId(), packet.getActionId(), true);
-            session.sendDownstreamPacket(confirmPacket);
+        System.err.println(packet);
+        Transaction transaction = session.getInventoryCache().getTransaction();
+        if (transaction == null || !(transaction.getCurrentAction() instanceof Confirmation)) {
+            return;
         }
+
+        // If we have a transaction and its a click we confirm it
+        ((Confirmation) transaction.getCurrentAction()).confirm(packet.isAccepted());
+
+
+//        if (!packet.isAccepted()) {
+//            ClientConfirmTransactionPacket confirmPacket = new ClientConfirmTransactionPacket(packet.getWindowId(), packet.getActionId(), true);
+//            session.sendDownstreamPacket(confirmPacket);
+//        }
     }
 }

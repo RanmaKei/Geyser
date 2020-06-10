@@ -27,41 +27,76 @@ package org.geysermc.connector.network.translators.inventory.action;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.inventory.Inventory;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.inventory.InventoryTranslator;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Comparator;
 import java.util.PriorityQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * A transaction is created when changes are made to the Inventory. This will store changes sent to us from
+ * downstream and playback a series of actions.
+ */
 
 @Getter
 @ToString(onlyExplicitlyIncluded = true)
-@AllArgsConstructor
-public class ActionPlan {
+@RequiredArgsConstructor
+public class Transaction {
 
     @ToString.Include
     private final PriorityQueue<BaseAction> actions = new PriorityQueue<>();
+
+    @ToString.Include
+    private BaseAction currentAction = null;
 
     private final GeyserSession session;
     private final InventoryTranslator translator;
     private final Inventory inventory;
 
     public void add(BaseAction action) {
+        action.setTransaction(this);
         actions.add(action);
     }
 
+    /**
+     * Start Execution of the Transaction
+     */
     public void execute() {
-        while (!actions.isEmpty()) {
-            BaseAction action = actions.remove();
-            action.execute(this);
+        if (actions.isEmpty()) {
+            return;
         }
 
-        /*if (refresh) {
-            translator.updateInventory(session, inventory);
-            InventoryUtils.updateCursor(session);
-        }*/
+        next();
+
+//        // Update session at end
+//        add(new Execute(() -> {
+//            session.setActionPlan(null);
+//        }, 10));
+
+//        /*if (refresh) {
+//            translator.updateInventory(session, inventory);
+//            InventoryUtils.updateCursor(session);
+//        }*/
     }
+
+    /**
+     * Execute the next action
+     */
+    public void next() {
+        if (actions.isEmpty()) {
+            currentAction = null;
+            return;
+        }
+
+        currentAction = actions.remove();
+        System.err.println("Executing: " + currentAction);
+        currentAction.execute();
+    }
+
 }

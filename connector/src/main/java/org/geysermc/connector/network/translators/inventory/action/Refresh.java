@@ -41,25 +41,38 @@ import org.geysermc.connector.utils.InventoryUtils;
  */
 @Getter
 @ToString
-@AllArgsConstructor
-public class Refresh extends BaseAction {
+public class Refresh extends BaseAction implements Confirmation {
 
     private final int weight = 10;
+    private short actionId;
 
     @Override
-    public void execute(ActionPlan plan) {
-        if (true) return;
+    public void execute() {
+        actionId = (short) transaction.getInventory().getTransactionId().getAndIncrement();
+        ClientWindowActionPacket clickPacket = new ClientWindowActionPacket(transaction.getInventory().getId(),
+                actionId, 37, InventoryUtils.REFRESH_ITEM,
+                WindowAction.CLICK_ITEM, ClickItemParam.LEFT_CLICK);
 
-        // Only execute if we are the only refresh in the queue
-        if (plan.getActions().stream().anyMatch(a -> a instanceof Refresh)) {
-            return;
-        }
+        transaction.getSession().sendDownstreamPacket(clickPacket);
 
-        final short actionId = (short) plan.getInventory().getTransactionId().getAndIncrement();
-        ClientWindowActionPacket clickPacket = new ClientWindowActionPacket(plan.getInventory().getId(),
-                actionId, -800, InventoryUtils.REFRESH_ITEM, WindowAction.CLICK_ITEM, ClickItemParam.LEFT_CLICK);
+//        // Find the last Click and set its refresh to True. Seriously hacky.
+//        Click[] clickActions = plan.getActions().stream()
+//                .filter(p-> p.getAction() instanceof Click)
+//                .map(p -> (Click)p.getAction())
+//                .toArray(Click[]::new);
+//
+//        if (clickActions.length > 0) {
+//            clickActions[clickActions.length-1].setRefresh(true);
+//        }
+    }
 
-        plan.getSession().sendDownstreamPacket(clickPacket);
-        plan.getSession().sendDownstreamPacket(new ClientConfirmTransactionPacket(plan.getInventory().getId(), actionId, true));
+
+    @Override
+    public void confirm(boolean accepted) {
+        // We always reject the packet
+        ClientConfirmTransactionPacket confirmPacket = new ClientConfirmTransactionPacket(transaction.getInventory().getId(),
+                actionId, false);
+        transaction.getSession().sendDownstreamPacket(confirmPacket);
+        transaction.next();
     }
 }
