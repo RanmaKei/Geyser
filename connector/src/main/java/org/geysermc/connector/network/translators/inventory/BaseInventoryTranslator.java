@@ -335,11 +335,13 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
 
             // Pick up spare if needed
             if (spareSlot != -1) {
-                while (spareCount > 0) {
-                    transaction.add(new Click(Click.Type.RIGHT, spareSlot));
-                    spareCount--;
-                    cursor.currentCount++;
+                if (cursor.currentCount > 0) {
+                    // place first
+                    transaction.add(new Click(Click.Type.LEFT, spareSlot));
                 }
+
+                transaction.add(new Click(Click.Type.LEFT, spareCount));
+                cursor.currentCount += spareCount;
             }
         } else {
             // From is the cursor, so we can assume to is not
