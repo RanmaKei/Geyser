@@ -126,8 +126,11 @@ public class CraftingInventoryTranslator extends BaseInventoryTranslator {
             }
         }
 
-        // Remove Useless Packet
-        if (actions.stream().anyMatch(a -> a.getSource().getContainerId() == ContainerId.CRAFTING_USE_INGREDIENT)) {
+        // Remove Useless Items
+
+        if (actions.stream().anyMatch(a ->
+                a.getSource().getContainerId() == ContainerId.CRAFTING_USE_INGREDIENT
+                    || a.getSource().getContainerId() == ContainerId.CRAFTING_RESULT)) {
             return;
         }
 

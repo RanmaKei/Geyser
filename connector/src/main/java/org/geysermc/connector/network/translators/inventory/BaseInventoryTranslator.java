@@ -333,7 +333,7 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                     transaction.add(new Click(Click.Type.LEFT, spareSlot));
                 }
 
-                transaction.add(new Click(Click.Type.LEFT, spareCount));
+                transaction.add(new Click(Click.Type.LEFT, spareSlot));
                 cursor.currentCount += spareCount;
             }
         } else {
@@ -420,7 +420,7 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
      */
     @Override
     public boolean isCursor(InventoryActionData action) {
-        return (action.getSource().getContainerId() == ContainerId.CURSOR && action.getSlot() == 50);
+        return (action.getSource().getContainerId() == ContainerId.CURSOR && action.getSlot() == 0);
     }
 
     /**

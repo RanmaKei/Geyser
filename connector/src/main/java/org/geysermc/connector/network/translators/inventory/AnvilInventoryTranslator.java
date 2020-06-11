@@ -77,7 +77,7 @@ public class AnvilInventoryTranslator extends BlockInventoryTranslator {
 
     @Override
     public boolean isOutput(InventoryActionData action) {
-        return bedrockSlotToJava(action) == 2;
+        return action.getSlot() == 50;
     }
 
 
@@ -101,12 +101,9 @@ public class AnvilInventoryTranslator extends BlockInventoryTranslator {
 
     @Override
     public void translateActions(GeyserSession session, Inventory inventory, List<InventoryActionData> actions) {
-        // If we have an anvil_result then we filter out anvil_material and container_input
-        if (actions.stream().anyMatch(this::isOutput)) {
-            actions = actions.stream()
-                    .filter(a -> a.getSource().getContainerId() != ContainerId.ANVIL_MATERIAL)
-                    .filter(a -> a.getSource().getContainerId() != ContainerId.CONTAINER_INPUT)
-                    .collect(Collectors.toList());
+        // If we have an anvil_result then we ignore this packet
+        if (actions.stream().anyMatch(a -> a.getSource().getContainerId() == ContainerId.ANVIL_RESULT)) {
+            return;
         }
 
         super.translateActions(session, inventory, actions);
