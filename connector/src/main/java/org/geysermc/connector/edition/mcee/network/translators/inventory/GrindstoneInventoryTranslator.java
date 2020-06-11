@@ -72,6 +72,11 @@ public class GrindstoneInventoryTranslator extends BlockInventoryTranslator {
     }
 
     @Override
+    public boolean isCursor(InventoryActionData action) {
+        return (action.getSource().getContainerId() == ContainerId.CURSOR && action.getSlot() == 0);
+    }
+
+    @Override
     protected void processAction(Transaction transaction, ActionData cursor, ActionData from, ActionData to) {
         super.processAction(transaction, cursor, from, to);
     }

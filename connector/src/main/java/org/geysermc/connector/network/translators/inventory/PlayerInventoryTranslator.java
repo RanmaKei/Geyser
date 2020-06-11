@@ -53,6 +53,7 @@ public class PlayerInventoryTranslator extends BaseInventoryTranslator {
     @Override
     public void updateInventory(GeyserSession session, Inventory inventory) {
         updateCraftingGrid(session, inventory);
+        System.err.println("Updateing player inventory: " + inventory);
 
         InventoryContentPacket inventoryContentPacket = new InventoryContentPacket();
         inventoryContentPacket.setContainerId(ContainerId.INVENTORY);

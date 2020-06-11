@@ -33,6 +33,7 @@ import com.github.steveice10.mc.protocol.data.game.window.DropItemParam;
 import com.github.steveice10.mc.protocol.data.game.window.WindowAction;
 import com.github.steveice10.mc.protocol.data.game.world.block.BlockFace;
 import com.github.steveice10.mc.protocol.packet.ingame.client.player.ClientPlayerActionPacket;
+import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientWindowActionPacket;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -44,38 +45,27 @@ import lombok.ToString;
 @Getter
 @ToString
 @AllArgsConstructor
-public class Drop extends BaseAction {
+public class Drop extends ConfirmAction {
 
     private final Type dropType;
     private final int javaSlot;
 
     @Override
     public void execute() {
-
+        super.execute();
 
         switch (dropType) {
             case DROP_ITEM:
             case DROP_STACK:
                 ClientWindowActionPacket dropPacket = new ClientWindowActionPacket(
                         transaction.getInventory().getId(),
-                        transaction.getInventory().getTransactionId().getAndIncrement(),
+                        id,
                         javaSlot,
                         null,
                         WindowAction.DROP_ITEM,
                         dropType == Type.DROP_ITEM ? DropItemParam.DROP_FROM_SELECTED : DropItemParam.DROP_SELECTED_STACK
                 );
                 transaction.getSession().sendDownstreamPacket(dropPacket);
-
-//                ItemStack cursor = plan.getSession().getInventory().getCursor();
-//                if (cursor != null) {
-//                    plan.getSession().getInventory().setCursor(
-//                            new ItemStack(
-//                                    cursor.getId(),
-//                                    dropType == Type.DROP_ITEM ? cursor.getAmount() - 1 : 0,
-//                                    cursor.getNbt()
-//                            )
-//                    );
-//                }
                 break;
             case DROP_ITEM_HOTBAR:
             case DROP_STACK_HOTBAR:
@@ -85,17 +75,7 @@ public class Drop extends BaseAction {
                         BlockFace.DOWN
                 );
                 transaction.getSession().sendDownstreamPacket(actionPacket);
-                ItemStack item = transaction.getSession().getInventory().getItem(javaSlot);
-//                if (item != null) {
-//                    plan.getSession().getInventory().setItem(
-//                            javaSlot,
-//                            new ItemStack(
-//                                    item.getId(),
-//                                    dropType == Type.DROP_ITEM_HOTBAR ? item.getAmount() - 1 : 0,
-//                                    item.getNbt()
-//                            )
-//                    );
-//                }
+                break;
         }
 
         transaction.next();

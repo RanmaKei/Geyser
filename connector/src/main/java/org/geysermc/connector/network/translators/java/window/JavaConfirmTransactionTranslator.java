@@ -25,13 +25,11 @@
 
 package org.geysermc.connector.network.translators.java.window;
 
-import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientConfirmTransactionPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.server.window.ServerConfirmTransactionPacket;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
-import org.geysermc.connector.network.translators.inventory.action.Click;
-import org.geysermc.connector.network.translators.inventory.action.Confirmation;
+import org.geysermc.connector.network.translators.inventory.action.ConfirmAction;
 import org.geysermc.connector.network.translators.inventory.action.Transaction;
 
 @Translator(packet = ServerConfirmTransactionPacket.class)
@@ -41,17 +39,11 @@ public class JavaConfirmTransactionTranslator extends PacketTranslator<ServerCon
     public void translate(ServerConfirmTransactionPacket packet, GeyserSession session) {
         System.err.println(packet);
         Transaction transaction = Transaction.CURRENT_TRANSACTION;
-        if (transaction == null || !(transaction.getCurrentAction() instanceof Confirmation)) {
+        if (transaction == null || !(transaction.getCurrentAction() instanceof ConfirmAction)) {
             return;
         }
 
-        // If we have a transaction and its a confirmation we confirm it
-        ((Confirmation) transaction.getCurrentAction()).confirm(packet.isAccepted());
-
-
-//        if (!packet.isAccepted()) {
-//            ClientConfirmTransactionPacket confirmPacket = new ClientConfirmTransactionPacket(packet.getWindowId(), packet.getActionId(), true);
-//            session.sendDownstreamPacket(confirmPacket);
-//        }
+        // If we have a transaction and its a ConfirmAction we confirm it
+        ((ConfirmAction) transaction.getCurrentAction()).confirm(packet.getActionId(), packet.isAccepted());
     }
 }

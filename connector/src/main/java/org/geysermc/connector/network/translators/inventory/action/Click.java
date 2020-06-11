@@ -43,15 +43,13 @@ import org.geysermc.connector.utils.InventoryUtils;
  */
 @Getter
 @ToString
-public class Click extends BaseAction implements Confirmation {
+public class Click extends ConfirmAction {
 
     private final Type clickType;
     private final int javaSlot;
 
     @Setter
     private boolean refresh;
-
-    private short actionId;
 
     public Click(Type clickType, int javaSlot, boolean refresh) {
         this.clickType = clickType;
@@ -65,9 +63,9 @@ public class Click extends BaseAction implements Confirmation {
 
     @Override
     public void execute() {
+        super.execute();
         ItemStack clickedItem = transaction.getInventory().getItem(javaSlot);
         PlayerInventory playerInventory = transaction.getSession().getInventory();
-        actionId = (short) transaction.getInventory().getTransactionId().getAndIncrement();
         final ItemStack cursorItem = playerInventory.getCursor();
 
         ClientWindowActionPacket clickPacket;
@@ -75,7 +73,7 @@ public class Click extends BaseAction implements Confirmation {
         switch (clickType) {
             case LEFT:
                 clickPacket = new ClientWindowActionPacket(transaction.getInventory().getId(),
-                        actionId, javaSlot, refresh ? InventoryUtils.REFRESH_ITEM : clickedItem,
+                        id, javaSlot, refresh ? InventoryUtils.REFRESH_ITEM : clickedItem,
                         WindowAction.CLICK_ITEM, ClickItemParam.LEFT_CLICK);
 
                 if (!InventoryUtils.canStack(cursorItem, clickedItem)) {
@@ -86,12 +84,13 @@ public class Click extends BaseAction implements Confirmation {
                     transaction.getInventory().setItem(javaSlot, new ItemStack(clickedItem.getId(),
                             clickedItem.getAmount() + cursorItem.getAmount(), clickedItem.getNbt()));
                 }
+                System.err.println(clickPacket);
                 transaction.getSession().sendDownstreamPacket(clickPacket);
                 break;
 
             case RIGHT:
                 clickPacket = new ClientWindowActionPacket(transaction.getInventory().getId(),
-                        actionId, javaSlot, refresh ? InventoryUtils.REFRESH_ITEM : clickedItem,
+                        id, javaSlot, refresh ? InventoryUtils.REFRESH_ITEM : clickedItem,
                         WindowAction.CLICK_ITEM, ClickItemParam.RIGHT_CLICK);
 
                 if (cursorItem == null && clickedItem != null) {
@@ -119,7 +118,7 @@ public class Click extends BaseAction implements Confirmation {
 
                 ClientWindowActionPacket shiftClickPacket = new ClientWindowActionPacket(
                         transaction.getInventory().getId(),
-                        transaction.getInventory().getTransactionId().getAndIncrement(),
+                        id,
                         javaSlot, clickedItem,
                         WindowAction.SHIFT_CLICK_ITEM,
                         ShiftClickItemParam.LEFT_CLICK
@@ -127,22 +126,6 @@ public class Click extends BaseAction implements Confirmation {
                 transaction.getSession().sendDownstreamPacket(shiftClickPacket);
                 break;
         }
-    }
-
-    /**
-     * Called when we received a server confirmation packet.
-     */
-    @Override
-    public void confirm(boolean accepted) {
-        if (!accepted) {
-            System.err.println("NOT ACCEPTED, RETRYING");
-            ClientConfirmTransactionPacket confirmPacket = new ClientConfirmTransactionPacket(transaction.getInventory().getId(),
-                    actionId, true);
-            transaction.getSession().sendDownstreamPacket(confirmPacket);
-            return;
-        }
-
-        transaction.next();
     }
 
     public enum Type {

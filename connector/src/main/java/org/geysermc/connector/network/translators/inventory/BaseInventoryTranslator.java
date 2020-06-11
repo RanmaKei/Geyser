@@ -121,8 +121,6 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                 actionDataList.add(cursor);
             }
 
-
-
             outer:
             while (actionDataList.size() > 0) {
                 ActionData a1 = actionDataList.remove(0);
@@ -131,13 +129,11 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
 
                     // Check if a1 is already fulfilled
                     if (a1.isResolved()) {
-//                    System.err.println("a1 is resolved: " + a1);
                         continue outer;
                     }
 
                     // Check if a2 is already fulfilled
                     if (a2.isResolved()) {
-//                    System.err.println("a2 is reoslved: " + a2);
                         continue;
                     }
 
@@ -158,17 +154,6 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                         to = a1;
                     }
 
-                    // Check if to and from cancel each other out
-                    // @TODO This may not be needed anymore as we now filter useless packets
-                    if (from.javaSlot == to.javaSlot
-                            && from.remaining() == to.remaining()
-                            && from.action.getSource().getContainerId() == to.action.getSource().getContainerId()
-                    ) {
-                        from.currentCount = from.toCount;
-                        to.currentCount = to.toCount;
-                        continue outer;
-                    }
-
                     // Process
                     processAction(transaction, cursor, from, to);
                 }
@@ -180,16 +165,13 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
                 }
             }
 
-            // Update cursor at end
-            transaction.add(new Execute(() -> {
-                InventoryUtils.updateCursor(session);
-                this.updateInventory(session, inventory);
-            }, 100));
+//            // Update cursor at end
+//            transaction.add(new Execute(() -> {
+//                InventoryUtils.updateCursor(session);
+//                this.updateInventory(session, inventory);
+//            }, 100));
 
-            System.err.println(transaction);
         }));
-
-        System.err.println("TRANSACTIONS: " + Transaction.TRANSACTIONS);
 
         Transaction.execute();
     }
@@ -383,6 +365,8 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
         // @TODO: Is this needed still?
         if (cursor != to && to.remaining() > 0 && cursor.currentCount > 0 && cursor.getCurrentItem().equals(to.getToItem())
                 && (to.getCurrentItem().equals(ItemData.AIR) || to.getCurrentItem().equals(to.getToItem()))) {
+
+            System.err.println("STILL NEEDED");
             to.currentItem = cursor.getCurrentItem();
 
             // @TODO: Optimize by checking if we can left click
@@ -436,10 +420,7 @@ public abstract class BaseInventoryTranslator extends InventoryTranslator{
      */
     @Override
     public boolean isCursor(InventoryActionData action) {
-        return (
-                action.getSource().getContainerId() == ContainerId.CURSOR
-                        && action.getSlot() == 0
-        );
+        return (action.getSource().getContainerId() == ContainerId.CURSOR && action.getSlot() == 50);
     }
 
     /**

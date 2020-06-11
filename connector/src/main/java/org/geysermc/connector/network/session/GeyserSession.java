@@ -564,6 +564,7 @@ public class GeyserSession implements CommandSender {
      * @param packet the java edition packet from MCProtocolLib
      */
     public void sendDownstreamPacket(Packet packet) {
+        System.err.println("Sending: " + packet);
         if (downstream != null && downstream.getSession() != null && protocol.getSubProtocol().equals(SubProtocol.GAME)) {
             downstream.getSession().send(packet);
         } else {

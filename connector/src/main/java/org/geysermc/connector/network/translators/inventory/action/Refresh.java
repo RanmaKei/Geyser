@@ -32,7 +32,10 @@ import com.github.steveice10.mc.protocol.packet.ingame.client.window.ClientWindo
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
+import org.geysermc.connector.GeyserConnector;
 import org.geysermc.connector.utils.InventoryUtils;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Send an invalid click to refresh all slots
@@ -41,38 +44,36 @@ import org.geysermc.connector.utils.InventoryUtils;
  */
 @Getter
 @ToString
-public class Refresh extends BaseAction implements Confirmation {
+public class Refresh extends ConfirmAction {
 
     private final int weight = 10;
-    private short actionId;
 
     @Override
     public void execute() {
-        actionId = (short) transaction.getInventory().getTransactionId().getAndIncrement();
+        super.execute();
+
         ClientWindowActionPacket clickPacket = new ClientWindowActionPacket(transaction.getInventory().getId(),
-                actionId, -1, InventoryUtils.REFRESH_ITEM,
+                id, -1, InventoryUtils.REFRESH_ITEM,
                 WindowAction.CLICK_ITEM, ClickItemParam.LEFT_CLICK);
 
         transaction.getSession().sendDownstreamPacket(clickPacket);
-
-//        // Find the last Click and set its refresh to True. Seriously hacky.
-//        Click[] clickActions = plan.getActions().stream()
-//                .filter(p-> p.getAction() instanceof Click)
-//                .map(p -> (Click)p.getAction())
-//                .toArray(Click[]::new);
-//
-//        if (clickActions.length > 0) {
-//            clickActions[clickActions.length-1].setRefresh(true);
-//        }
     }
 
 
     @Override
-    public void confirm(boolean accepted) {
-        // We always reject the packet
-        ClientConfirmTransactionPacket confirmPacket = new ClientConfirmTransactionPacket(transaction.getInventory().getId(),
-                actionId, false);
-        transaction.getSession().sendDownstreamPacket(confirmPacket);
-        transaction.next();
+    public void confirm(int id, boolean accepted) {
+        if (id != this.id) {
+            GeyserConnector.getInstance().getLogger().warning("Out of sequence Confirmation Packet with id: " + id);
+            return;
+        }
+
+        // We always reject the packet, but we will wait a little bit for a resync
+        GeyserConnector.getInstance().getGeneralThreadPool().schedule(() -> {
+            ClientConfirmTransactionPacket confirmPacket = new ClientConfirmTransactionPacket(transaction.getInventory().getId(),
+                    id, false);
+            transaction.getSession().sendDownstreamPacket(confirmPacket);
+
+            transaction.next();
+        }, 200, TimeUnit.MILLISECONDS);
     }
 }

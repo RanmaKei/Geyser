@@ -119,4 +119,9 @@ public class PlayerInventoryTranslator extends org.geysermc.connector.network.tr
         super.translateActions(session, inventory, actions);
     }
 
+    @Override
+    public boolean isCursor(InventoryActionData action) {
+        return (action.getSource().getContainerId() == ContainerId.CURSOR && action.getSlot() == 0);
+    }
+
 }

@@ -26,6 +26,7 @@
 package org.geysermc.connector.edition.mcee.network.translators.inventory;
 
 import com.github.steveice10.mc.protocol.data.game.window.WindowType;
+import com.nukkitx.protocol.bedrock.data.ContainerId;
 import com.nukkitx.protocol.bedrock.data.ContainerType;
 import com.nukkitx.protocol.bedrock.data.InventoryActionData;
 import com.nukkitx.protocol.bedrock.packet.ContainerSetDataPacket;
@@ -78,6 +79,11 @@ public class FurnaceInventoryTranslator extends BlockInventoryTranslator {
     @Override
     public boolean isOutput(InventoryActionData action) {
         return bedrockSlotToJava(action) == 2;
+    }
+
+    @Override
+    public boolean isCursor(InventoryActionData action) {
+        return (action.getSource().getContainerId() == ContainerId.CURSOR && action.getSlot() == 0);
     }
 
 }

@@ -121,4 +121,11 @@ public class CraftingInventoryTranslator extends BaseInventoryTranslator {
     public boolean isOutput(InventoryActionData action) {
         return action.getSource().getContainerId() == ContainerId.CRAFTING_RESULT;
     }
+
+    @Override
+    public boolean isCursor(InventoryActionData action) {
+        return (action.getSource().getContainerId() == ContainerId.CURSOR && action.getSlot() == 0);
+    }
+
+
 }

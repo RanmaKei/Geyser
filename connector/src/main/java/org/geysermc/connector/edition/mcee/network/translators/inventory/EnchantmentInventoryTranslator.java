@@ -24,10 +24,15 @@
  *
  */
 
-package org.geysermc.connector.network.translators.inventory.action;
+package org.geysermc.connector.edition.mcee.network.translators.inventory;
 
-public interface Confirmation {
+import com.nukkitx.protocol.bedrock.data.ContainerId;
+import com.nukkitx.protocol.bedrock.data.InventoryActionData;
 
-    void confirm(boolean accepted);
+public class EnchantmentInventoryTranslator extends org.geysermc.connector.network.translators.inventory.EnchantmentInventoryTranslator {
 
+    @Override
+    public boolean isCursor(InventoryActionData action) {
+        return (action.getSource().getContainerId() == ContainerId.CURSOR && action.getSlot() == 0);
+    }
 }
