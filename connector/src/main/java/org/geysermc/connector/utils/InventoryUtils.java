@@ -31,7 +31,6 @@ import com.nukkitx.nbt.CompoundTagBuilder;
 import com.nukkitx.nbt.tag.StringTag;
 import com.nukkitx.protocol.bedrock.data.inventory.ContainerId;
 import com.nukkitx.protocol.bedrock.data.inventory.ItemData;
-import com.nukkitx.protocol.bedrock.packet.InventoryContentPacket;
 import com.nukkitx.protocol.bedrock.packet.InventorySlotPacket;
 import org.geysermc.connector.common.ChatColor;
 import org.geysermc.connector.GeyserConnector;
