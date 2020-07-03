@@ -47,6 +47,8 @@ import com.nukkitx.protocol.bedrock.packet.*;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import org.geysermc.connector.entity.attribute.Attribute;
 import org.geysermc.connector.entity.attribute.AttributeType;
 import org.geysermc.connector.entity.living.ArmorStandEntity;
@@ -110,8 +112,8 @@ public class Entity {
         metadata.put(EntityData.MAX_AIR_SUPPLY, (short) 300);
         metadata.put(EntityData.AIR_SUPPLY, (short) 0);
         metadata.put(EntityData.LEASH_HOLDER_EID, -1L);
-        metadata.put(EntityData.BOUNDING_BOX_HEIGHT, entityType.getHeight());
-        metadata.put(EntityData.BOUNDING_BOX_WIDTH, entityType.getWidth());
+        metadata.put(EntityData.BOUNDING_BOX_HEIGHT, entityType.getData().getHeight());
+        metadata.put(EntityData.BOUNDING_BOX_WIDTH, entityType.getData().getWidth());
         EntityFlags flags = new EntityFlags();
         flags.setFlag(EntityFlag.HAS_GRAVITY, true);
         flags.setFlag(EntityFlag.HAS_COLLISION, true);
@@ -122,13 +124,13 @@ public class Entity {
 
     public void spawnEntity(GeyserSession session) {
         AddEntityPacket addEntityPacket = new AddEntityPacket();
-        addEntityPacket.setIdentifier(entityType.getIdentifier());
+        addEntityPacket.setIdentifier(entityType.getData().getIdentifier());
         addEntityPacket.setRuntimeEntityId(geyserId);
         addEntityPacket.setUniqueEntityId(geyserId);
         addEntityPacket.setPosition(position);
         addEntityPacket.setMotion(motion);
         addEntityPacket.setRotation(getBedrockRotation());
-        addEntityPacket.setEntityType(entityType.getType());
+//        addEntityPacket.setEntityType(entityType.getType()); Not used anymore
         addEntityPacket.getMetadata().putAll(metadata);
 
         valid = true;
@@ -347,8 +349,8 @@ public class Entity {
                     metadata.put(EntityData.BOUNDING_BOX_HEIGHT, 0.2f);
                 } else if (metadata.getFlags().getFlag(EntityFlag.SLEEPING)) {
                     metadata.getFlags().setFlag(EntityFlag.SLEEPING, false);
-                    metadata.put(EntityData.BOUNDING_BOX_WIDTH, getEntityType().getWidth());
-                    metadata.put(EntityData.BOUNDING_BOX_HEIGHT, getEntityType().getHeight());
+                    metadata.put(EntityData.BOUNDING_BOX_WIDTH, getEntityType().getData().getWidth());
+                    metadata.put(EntityData.BOUNDING_BOX_HEIGHT, getEntityType().getData().getHeight());
                     metadata.put(EntityData.PLAYER_FLAGS, (byte) 0);
                 }
                 break;
@@ -388,5 +390,44 @@ public class Entity {
 
     public <I extends Entity> boolean is(Class<I> entityClass) {
         return entityClass.isInstance(this);
+    }
+
+    @SuperBuilder
+    @Value
+    public static class Data {
+        Class<? extends Entity> entityClass = Entity.class;
+
+        EntityType entityType;
+        Float height;
+        Float width;
+        Float length;
+        float offset;
+        String identifier;
+
+        @SuppressWarnings("SuspiciousNameCombination")
+        public Data(EntityType entityType, Float height, Float width, Float length, float offset, String identifier) {
+            if (height == null) {
+                height = 0f;
+            }
+
+            if (width == null) {
+                width = height;
+            }
+
+            if (length == null) {
+                length = width;
+            }
+
+            if (identifier == null) {
+                identifier = "minecraft:" + entityType.name().toLowerCase();
+            }
+
+            this.entityType = entityType;
+            this.height = height;
+            this.width = width;
+            this.length = length;
+            this.offset = offset;
+            this.identifier = identifier;
+        }
     }
 }

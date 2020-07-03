@@ -52,7 +52,7 @@ public class JavaSpawnLivingEntityTranslator extends PacketTranslator<ServerSpaw
             return;
         }
 
-        Class<? extends Entity> entityClass = type.getEntityClass();
+        Class<? extends Entity> entityClass = type.getData().getEntityClass();
         try {
             Constructor<? extends Entity> entityConstructor = entityClass.getConstructor(long.class, long.class, EntityType.class,
                     Vector3f.class, Vector3f.class, Vector3f.class);

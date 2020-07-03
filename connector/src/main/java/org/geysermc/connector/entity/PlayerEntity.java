@@ -92,7 +92,7 @@ public class PlayerEntity extends LivingEntity {
         addPlayerPacket.setUsername(username);
         addPlayerPacket.setRuntimeEntityId(geyserId);
         addPlayerPacket.setUniqueEntityId(geyserId);
-        addPlayerPacket.setPosition(position.clone().sub(0, EntityType.PLAYER.getOffset(), 0));
+        addPlayerPacket.setPosition(position.clone().sub(0, EntityType.PLAYER.getData().getOffset(), 0));
         addPlayerPacket.setRotation(getBedrockRotation());
         addPlayerPacket.setMotion(motion);
         addPlayerPacket.setHand(hand);
@@ -223,7 +223,7 @@ public class PlayerEntity extends LivingEntity {
 
     @Override
     public void setPosition(Vector3f position) {
-        this.position = position.add(0, entityType.getOffset(), 0);
+        this.position = position.add(0, entityType.getData().getOffset(), 0);
     }
 
     @Override

@@ -26,7 +26,9 @@
 package org.geysermc.connector.entity.type;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.Value;
 import org.geysermc.connector.entity.*;
 import java.util.EnumMap;
 import java.util.Map;
@@ -152,56 +154,19 @@ public enum EntityType {
     ITEM_FRAME,
     ILLUSIONER;
 
-    private static final Map<EntityType, Data> VALUES = new EnumMap<>(EntityType.class);
+    private static final Map<EntityType, Entity.Data> VALUES = new EnumMap<>(EntityType.class);
     public static Register REGISTER = new Register();
     
     public static class Register {
-        public Register entityType(EntityType entityType, Class<? extends Entity> entityClass, int type, float height, float width,
-                                   float length, float offset, String identifier) {
-            VALUES.put(entityType, new Data(entityClass, type, height, width, length, offset, identifier));
+        @SuppressWarnings("SuspiciousNameCombination")
+        public <T extends Entity> Register entityType(EntityType entityType, Class<T> entityClass, T.Data.DataBuilder builder) {
+            VALUES.put(entityType, builder.entityType(entityType).build());
             return this;
         }
-        public Register entityType(EntityType entityType, Class<? extends Entity> entityClass, int type, float height, float width,
-                                   float length, float offset) {
-            return entityType(entityType, entityClass, type, height, width, length, offset, "minecraft:" + entityType.name().toLowerCase());
-        }
-        public Register entityType(EntityType entityType, Class<? extends Entity> entityClass, int type, float height, float width, float length) {
-            return entityType(entityType, entityClass, type, height, width, length, 0f);
-        }
-        public Register entityType(EntityType entityType, Class<? extends Entity> entityClass, int type, float height, float width) {
-            return entityType(entityType, entityClass, type, height, width, width);
-        }
-        public Register entityType(EntityType entityType, Class<? extends Entity> entityClass, int type, float height) {
-            return entityType(entityType, entityClass, type, height, height);
-        }
     }
 
-    public Class<? extends Entity> getEntityClass() {
-        return VALUES.get(this).getEntityClass();
-    }
-
-    public int getType() {
-        return VALUES.get(this).getType();
-    }
-
-    public float getHeight() {
-        return VALUES.get(this).getHeight();
-    }
-
-    public float getWidth() {
-        return VALUES.get(this).getWidth();
-    }
-
-    public float getLength() {
-        return VALUES.get(this).getLength();
-    }
-
-    public float getOffset() {
-        return VALUES.get(this).getOffset();
-    }
-
-    public String getIdentifier() {
-        return VALUES.get(this).getIdentifier();
+    public Entity.Data getData() {
+        return VALUES.get(this);
     }
 
     public static EntityType getFromIdentifier(String identifier) {
@@ -211,17 +176,4 @@ public enum EntityType {
                 .map(Map.Entry::getKey)
                 .orElse(null);
     }
-
-    @Getter
-    @AllArgsConstructor
-    public static class Data {
-        private final Class<? extends Entity> entityClass;
-        private final int type;
-        private final float height;
-        private final float width;
-        private final float length;
-        private final float offset;
-        private final String identifier;
-    }
-
 }

@@ -114,7 +114,7 @@ public class JavaPlayerPositionRotationTranslator extends PacketTranslator<Serve
         double newX = packet.getX() +
                 (packet.getRelative().contains(PositionElement.X) ? entity.getPosition().getX() : 0);
         double newY = packet.getY() +
-                (packet.getRelative().contains(PositionElement.Y) ? entity.getPosition().getY() - EntityType.PLAYER.getOffset() : 0);
+                (packet.getRelative().contains(PositionElement.Y) ? entity.getPosition().getY() - EntityType.PLAYER.getData().getOffset() : 0);
         double newZ = packet.getZ() +
                 (packet.getRelative().contains(PositionElement.Z) ? entity.getPosition().getZ() : 0);
 

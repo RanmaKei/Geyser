@@ -44,13 +44,13 @@ public class BoatEntity extends Entity {
     private final float ROWING_SPEED = 0.05f;
 
     public BoatEntity(long entityId, long geyserId, EntityType entityType, Vector3f position, Vector3f motion, Vector3f rotation) {
-        super(entityId, geyserId, entityType, position.add(0d, entityType.getOffset(), 0d), motion, rotation.add(90, 0, 90));
+        super(entityId, geyserId, entityType, position.add(0d, entityType.getData().getOffset(), 0d), motion, rotation.add(90, 0, 90));
     }
 
     @Override
     public void moveAbsolute(GeyserSession session, Vector3f position, Vector3f rotation, boolean isOnGround, boolean teleported) {
         // We don't include the rotation (y) as it causes the boat to appear sideways
-        super.moveAbsolute(session, position.add(0d, this.entityType.getOffset(), 0d), Vector3f.from(rotation.getX() + 90, 0, rotation.getX() + 90), isOnGround, teleported);
+        super.moveAbsolute(session, position.add(0d, this.entityType.getData().getOffset(), 0d), Vector3f.from(rotation.getX() + 90, 0, rotation.getX() + 90), isOnGround, teleported);
     }
 
     @Override

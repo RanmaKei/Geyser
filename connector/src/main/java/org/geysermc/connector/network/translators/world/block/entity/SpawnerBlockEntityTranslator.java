@@ -76,8 +76,8 @@ public class SpawnerBlockEntityTranslator extends BlockEntityTranslator {
 
             EntityType type = EntityType.getFromIdentifier(entityID);
             if (type != null) {
-                tags.add(new FloatTag("DisplayEntityWidth", type.getWidth()));
-                tags.add(new FloatTag("DisplayEntityHeight", type.getHeight()));
+                tags.add(new FloatTag("DisplayEntityWidth", type.getData().getWidth()));
+                tags.add(new FloatTag("DisplayEntityHeight", type.getData().getHeight()));
                 tags.add(new FloatTag("DisplayEntityScale", 1.0f));
             }
         }

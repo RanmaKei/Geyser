@@ -35,7 +35,7 @@ import org.geysermc.connector.network.translators.world.block.BlockTranslator;
 public class MinecartEntity extends Entity {
 
     public MinecartEntity(long entityId, long geyserId, EntityType entityType, Vector3f position, Vector3f motion, Vector3f rotation) {
-        super(entityId, geyserId, entityType, position.add(0d, entityType.getOffset(), 0d), motion, rotation);
+        super(entityId, geyserId, entityType, position.add(0d, entityType.getData().getOffset(), 0d), motion, rotation);
     }
 
     @Override
@@ -78,6 +78,6 @@ public class MinecartEntity extends Entity {
 
     @Override
     public void moveAbsolute(GeyserSession session, Vector3f position, Vector3f rotation, boolean isOnGround, boolean teleported) {
-        super.moveAbsolute(session, position.add(0d, this.entityType.getOffset(), 0d), rotation, isOnGround, teleported);
+        super.moveAbsolute(session, position.add(0d, this.entityType.getData().getOffset(), 0d), rotation, isOnGround, teleported);
     }
 }

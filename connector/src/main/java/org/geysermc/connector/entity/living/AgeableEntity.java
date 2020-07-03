@@ -45,8 +45,8 @@ public class AgeableEntity extends CreatureEntity {
             metadata.put(EntityData.SCALE, isBaby ? .55f : 1f);
             metadata.getFlags().setFlag(EntityFlag.BABY, isBaby);
 
-            metadata.put(EntityData.BOUNDING_BOX_HEIGHT, entityType.getHeight() * (isBaby ? 0.55f : 1f));
-            metadata.put(EntityData.BOUNDING_BOX_WIDTH, entityType.getWidth() * (isBaby ? 0.55f : 1f));
+            metadata.put(EntityData.BOUNDING_BOX_HEIGHT, entityType.getData().getHeight() * (isBaby ? 0.55f : 1f));
+            metadata.put(EntityData.BOUNDING_BOX_WIDTH, entityType.getData().getWidth() * (isBaby ? 0.55f : 1f));
         }
 
         super.updateBedrockMetadata(entityMetadata, session);

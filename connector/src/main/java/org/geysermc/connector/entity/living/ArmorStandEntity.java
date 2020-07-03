@@ -48,7 +48,7 @@ public class ArmorStandEntity extends LivingEntity {
     public void moveAbsolute(GeyserSession session, Vector3f position, Vector3f rotation, boolean isOnGround, boolean teleported) {
         // Fake the height to be above where it is so the nametag appears in the right location for invisible non-marker armour stands
         if (!isMarker && isInvisible) {
-            position = position.add(0d, entityType.getHeight() * (isSmall ? 0.55d : 1d), 0d);
+            position = position.add(0d, entityType.getData().getHeight() * (isSmall ? 0.55d : 1d), 0d);
         }
 
         super.moveAbsolute(session, position, rotation, isOnGround, teleported);
@@ -80,8 +80,8 @@ public class ArmorStandEntity extends LivingEntity {
                     metadata.put(EntityData.BOUNDING_BOX_HEIGHT, 0.9875f);
                 }
             } else if (metadata.get(EntityData.BOUNDING_BOX_WIDTH) != null && metadata.get(EntityData.BOUNDING_BOX_WIDTH).equals(0.25f)) {
-                metadata.put(EntityData.BOUNDING_BOX_WIDTH, entityType.getWidth());
-                metadata.put(EntityData.BOUNDING_BOX_HEIGHT, entityType.getHeight());
+                metadata.put(EntityData.BOUNDING_BOX_WIDTH, entityType.getData().getWidth());
+                metadata.put(EntityData.BOUNDING_BOX_HEIGHT, entityType.getData().getHeight());
             }
 
             // setMarker

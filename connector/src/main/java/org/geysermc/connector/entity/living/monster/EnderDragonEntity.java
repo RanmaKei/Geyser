@@ -72,7 +72,7 @@ public class EnderDragonEntity extends InsentientEntity {
         addEntityPacket.setPosition(position);
         addEntityPacket.setMotion(motion);
         addEntityPacket.setRotation(getBedrockRotation());
-        addEntityPacket.setEntityType(entityType.getType());
+//        addEntityPacket.setEntityType(entityType.getType());  // Not used anymore
         addEntityPacket.getMetadata().putAll(metadata);
 
         // Otherwise dragon is always 'dying'

@@ -56,7 +56,7 @@ public class JavaSpawnEntityTranslator extends PacketTranslator<ServerSpawnEntit
             return;
         }
 
-        Class<? extends Entity> entityClass = type.getEntityClass();
+        Class<? extends Entity> entityClass = type.getData().getEntityClass();
         try {
             Entity entity;
             if (packet.getType() == EntityType.FALLING_BLOCK) {

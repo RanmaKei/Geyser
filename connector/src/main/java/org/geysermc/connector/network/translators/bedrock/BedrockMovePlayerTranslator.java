@@ -61,7 +61,7 @@ public class BedrockMovePlayerTranslator extends PacketTranslator<MovePlayerPack
 
         // We need to parse the float as a string since casting a float to a double causes us to
         // lose precision and thus, causes players to get stuck when walking near walls
-        double javaY = packet.getPosition().getY() - EntityType.PLAYER.getOffset();
+        double javaY = packet.getPosition().getY() - EntityType.PLAYER.getData().getOffset();
         if (packet.isOnGround()) javaY = Math.ceil(javaY * 2) / 2;
 
         Vector3d position = Vector3d.from(Double.parseDouble(Float.toString(packet.getPosition().getX())), javaY,
@@ -83,7 +83,7 @@ public class BedrockMovePlayerTranslator extends PacketTranslator<MovePlayerPack
 
         // head yaw, pitch, head yaw
         Vector3f rotation = Vector3f.from(packet.getRotation().getY(), packet.getRotation().getX(), packet.getRotation().getY());
-        entity.setPosition(packet.getPosition().sub(0, EntityType.PLAYER.getOffset(), 0));
+        entity.setPosition(packet.getPosition().sub(0, EntityType.PLAYER.getData().getOffset(), 0));
         entity.setRotation(rotation);
         entity.setOnGround(packet.isOnGround());
 
