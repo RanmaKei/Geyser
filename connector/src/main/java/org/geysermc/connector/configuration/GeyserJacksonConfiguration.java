@@ -96,7 +96,16 @@ public abstract class GeyserJacksonConfiguration implements GeyserConfiguration 
     @JsonProperty("above-bedrock-nether-building")
     private boolean aboveBedrockNetherBuilding;
 
+    @JsonProperty("force-resource-packs")
+    private boolean forceResourcePacks;
+
     private MetricsInfo metrics;
+
+    @JsonProperty("mtu")
+    private int mtu = 1400;
+
+    @JsonProperty("config-version")
+    private int configVersion;
 
     @Getter
     public static class BedrockConfiguration implements IBedrockConfiguration {
@@ -144,9 +153,4 @@ public abstract class GeyserJacksonConfiguration implements GeyserConfiguration 
         private String uniqueId;
     }
 
-    @JsonProperty("mtu")
-    private int mtu = 1400;
-
-    @JsonProperty("config-version")
-    private int configVersion;
 }
